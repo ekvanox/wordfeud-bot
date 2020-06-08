@@ -4,8 +4,16 @@ from wordfeudplayer.board import Board
 import heapq
 import time
 import urllib3
+import coloredlogs
+import logging
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Setup colored logging
+coloredlogs.install(level=20, fmt="[%(levelname)s] %(asctime)s: %(message)s", level_styles={'critical': {'bold': True, 'color': 'red'}, 'debug': {'color': 'green'}, 'error': {'color': 'red'}, 'info': {
+                    'color': 'white'}, 'notice': {'color': 'magenta'}, 'spam': {'color': 'green', 'faint': True}, 'success': {'bold': True, 'color': 'green'}, 'verbose': {'color': 'blue'}, 'warning': {'color': 'yellow'}}, field_styles={'asctime': {'color': 'cyan'}, 'levelname': {'bold': True, 'color': 'black'}})
+
+logging.info('Script has started')
 
 
 class Wordfeud:
@@ -136,6 +144,93 @@ class Wordfeud:
 
         return parsed
 
+    def skip_turn(self, game):
+        """Skip the current turn
+
+        Args:
+            game (object): Game object containing game id
+
+        Returns:
+            dict: Parsed server response
+        """
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            'Content-Length': '0',
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}"
+        }
+
+        response = requests.post(
+            f'https://api.wordfeud.com/wf/game/{game.id}/pass/', headers=headers, verify=False)
+
+        parsed = response.json()
+
+        assert (parsed['status'] ==
+                'success'), 'Unexpected response from server'
+
+        return parsed
+
+    def swap_tiles(self, game: object, tiles: list):
+        """Swap set of tiles for a new set of random ones
+
+        Args:
+            game (object): Game object containing game id
+            tiles (list): List of all tiles that are meant to be replaced
+
+        Returns:
+            dict: Parsed server response
+        """
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            'Content-Length': '0',
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}"
+        }
+
+        data = f'''{{"tiles":{str(tiles).replace("'",'"')}}}'''
+
+        response = requests.post(
+            f'https://api.wordfeud.com/wf/game/{game.id}/swap/', data=data, headers=headers, verify=False)
+
+        parsed = response.json()
+
+        assert (parsed['status'] ==
+                'success'), 'Unexpected response from server'
+
+        return parsed
+
+    def start_new_game_random(self, ruleset: int, board_type: str):
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            'Content-Length': '0',
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}"
+        }
+
+        data = f'{{"ruleset":{ruleset},"board_type":"{board_type}"}}'
+
+        response = requests.post(
+            f'https://api.wordfeud.com/wf/random_request/create/', data=data, headers=headers, verify=False)
+
+        parsed = response.json()
+
+        assert (parsed['status'] ==
+                'success'), 'Unexpected response from server'
+
+        return parsed
+
 
 class WordfeudGame:
     def __init__(self, data, board_quarters):
@@ -153,6 +248,8 @@ class WordfeudGame:
         self.letters = data['players'][self.user_id]['rack']
         self.tiles = data['tiles']
         self.ruleset = data['ruleset']
+        self.tiles_in_bag = data['bag_count']
+        self.active = data['is_running']
         self.opponent = data['players'][self.opponent_id]['username']
         self.quarter_board = board_quarters[self.board_id]
         self.my_turn = data['current_player'] == self.user_id
@@ -166,6 +263,8 @@ class WordfeudGame:
 
         self.letters = data['players'][self.user_id]['rack']
         self.tiles = data['tiles']
+        self.active = data['is_running']
+        self.tiles_in_bag = data['bag_count']
         self.my_turn = data['current_player'] == self.user_id
 
     def optimal_moves(self, num_moves=10):
@@ -177,9 +276,6 @@ class WordfeudGame:
         Returns:
             list: list of optimal moves
         """
-        # create a Wordlist and tell it to read one or more wordlists
-        wordlist = Wordlist()
-        dsso_id = wordlist.read_wordlist('ordlista.txt')
 
         # create a Board with standard bonus square placement and
         # set the current state of the game (where tiles are placed)
@@ -216,8 +312,6 @@ class WordfeudGame:
         letters = ''.join('*' if letter == '' else letter.lower()
                           for letter in self.letters)
 
-        print(letters)
-
         # calculate all possible words and their scores
 
         words = board.calc_all_word_scores(letters, wordlist, dsso_id)
@@ -241,6 +335,12 @@ class WordfeudGame:
 # Create wordfeud object
 wf = Wordfeud()
 
+
+# Load wordlist into memory
+logging.info('Loading wordlist')
+wordlist = Wordlist()
+dsso_id = wordlist.read_wordlist('ordlista.txt')
+
 # Generate session id
 wf.sessionid = wf.login(
     32947023, 'ea277fcfa2b2076f47430f913891dc8523c28e67', 'en')
@@ -250,20 +350,30 @@ tiles_and_game_data = wf.board_and_tile_data()
 # wf.update_board_quarters(tiles_and_game_data['content']['boards'])
 
 games = []
+time_since_last_play = time.time()
 
 while 1:
-    time.sleep(1)
+    # Recheck every 10 seconds
+    time.sleep(10)
 
     tiles_and_game_data = wf.board_and_tile_data()
 
-    if len(tiles_and_game_data['content']['games'])-len(games):
+    if (len(tiles_and_game_data['content']['games'])-len(games)) > 0:
         # If wordfeud server has more records of games than client has
         wf.update_board_quarters(tiles_and_game_data['content']['boards'])
 
-        for i in range(len(tiles_and_game_data['content']['games'])-len(games), 0, -1):
-            # Add new game to game list
-            games.append(WordfeudGame(tiles_and_game_data['content']
-                                      ['games'][-i], wf.board_quarters))
+        for game_data in tiles_and_game_data['content']['games']:
+            for game in games:
+                if game.id == game_data['id']:
+                    break
+            else:
+                # If game data id was not found in local copy, append it to local copy
+                games.append(WordfeudGame(game_data, wf.board_quarters))
+
+        # for i in range(len(tiles_and_game_data['content']['games'])-len(games), 0, -1):
+        #     # Add new game to game list
+        #     games.append(WordfeudGame(tiles_and_game_data['content']
+        #                               ['games'][-i], wf.board_quarters))
 
     game_data = tiles_and_game_data['content']['games']
 
@@ -278,37 +388,46 @@ while 1:
 
         game.update(game_data)
 
-        if game.my_turn:
-            print(f'{game.opponent} has played, generating a move')
+        if game.active and game.my_turn:
+            time_since_last_play = time.time()
+            logging.info(f'{game.opponent} has played, generating a move')
             optimal_moves = game.optimal_moves()
-            print(optimal_moves)
 
-            for (x, y, horizontal, word, points) in optimal_moves:
-                tile_positions = []
+            if optimal_moves == []:
+                if game.tiles_in_bag < 7:
+                    logging.warning('No moves available, skipping turn')
+                    wf.skip_turn(game)
+                else:
+                    logging.warning('No moves available, replacing all tiles')
+                    letter_list = game.letters
+                    wf.swap_tiles(game, letter_list)
+            else:
+                for (x, y, horizontal, word, points) in optimal_moves:
+                    tile_positions = []
 
-                for letter in word:
-                    skip_letter = False
+                    for letter in word:
+                        skip_letter = False
 
-                    for (_x, _y, _, _) in game.tiles:
-                        # If brick position is occupied
-                        if (_x, _y) == (x, y):
-                            skip_letter = True
+                        for (_x, _y, _, _) in game.tiles:
+                            # If brick position is occupied
+                            if (_x, _y) == (x, y):
+                                skip_letter = True
 
-                    if not skip_letter:
-                        tile_positions.append(
-                            [x, y, letter.upper(), not letter.islower()])
+                        if not skip_letter:
+                            tile_positions.append(
+                                [x, y, letter.upper(), not letter.islower()])
 
-                    # Iterate position of bricks
-                    if horizontal:
-                        x += 1
-                    else:
-                        y += 1
+                        # Iterate position of bricks
+                        if horizontal:
+                            x += 1
+                        else:
+                            y += 1
 
-                try:
-                    wf.place_tiles(game, word, tile_positions)
-                    print(f'Placed {word} for {points} points')
-                    break
-                except AssertionError:
-                    # If move was invalid
-                    print('Invalid move was made')
-                    continue
+                    try:
+                        wf.place_tiles(game, word, tile_positions)
+                        logging.info(f'Placed {word} for {points} points')
+                        break
+                    except AssertionError:
+                        # If move was invalid
+                        logging.warning('An invalid move was made')
+                        continue
