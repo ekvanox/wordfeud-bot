@@ -381,6 +381,9 @@ while 1:
     # Sleep between every iteration
     time.sleep(120)
 
+    # Temporary solution for starting new games
+    wf.start_new_game_random(4, 'random')
+
     current_unix_time = time.time()
     game_status_data = wf.game_status_data()
 
