@@ -1,12 +1,13 @@
 import requests
-from wordfeudplayer.wordlist import Wordlist
-from wordfeudplayer.board import Board
+from wordfeud_logic.wordlist import Wordlist
+from wordfeud_logic.board import Board
 import heapq
 import time
 import urllib3
 import urllib
 import coloredlogs
 import logging
+import os
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -311,26 +312,18 @@ class WordfeudGame:
         state = [''.join(row) for row in state]
         board.set_state(state)
 
-        # the letters we have on hand, '*' is a blank tile
+        # The tiles we have on hand, '*' is a blank tile
         letters = ''.join('*' if letter == '' else letter.lower()
                           for letter in self.letters)
 
-        # calculate all possible words and their scores
-
         words = board.calc_all_word_scores(letters, wordlist, dsso_id)
 
-        # pick out the 20 words with highest score and print them
         move_list = heapq.nlargest(
             num_moves, words, lambda wordlist: wordlist[4])
 
         if len(move_list) == 0:
             # There are no possible words
             return []
-
-        # print('Score StartX StartY  Direction Word (capital letter means "use wildcard")')
-        # for (x, y, horizontal, word, score) in top20:
-        #     print('%5d %6d %6s %10s %s' %
-        #           (score, x, y, 'Horizontal' if horizontal else 'Vertical', word))
 
         return move_list
 
@@ -342,15 +335,13 @@ wf = Wordfeud()
 # Load wordlist into memory
 logging.info('Loading wordlist')
 wordlist = Wordlist()
-dsso_id = wordlist.read_wordlist('ordlista.txt')
+dsso_id = wordlist.read_wordlist(os.path.join('wordlists', 'swedish.txt'))
 
 # Generate session id
 wf.sessionid = wf.login(
     32947023, 'ea277fcfa2b2076f47430f913891dc8523c28e67', 'en')
 
 tiles_and_game_data = wf.board_and_tile_data()
-
-# wf.update_board_quarters(tiles_and_game_data['content']['boards'])
 
 games = []
 time_since_last_play = time.time()
