@@ -4,6 +4,7 @@ from wordfeudplayer.board import Board
 import heapq
 import time
 import urllib3
+import urllib
 import coloredlogs
 import logging
 
@@ -195,7 +196,9 @@ class Wordfeud:
             "Cookie": f"sessionid={self.sessionid}"
         }
 
-        data = f'''{{"tiles":{str(tiles).replace("'",'"')}}}'''
+        print(tiles)
+
+        data = f'''{{"tiles":{urllib.parse.quote(str(tiles).replace("'",'"'))}}}'''
 
         response = requests.post(
             f'https://api.wordfeud.com/wf/game/{game.id}/swap/', data=data, headers=headers, verify=False)
@@ -353,8 +356,8 @@ games = []
 time_since_last_play = time.time()
 
 while 1:
-    # Recheck every 10 seconds
-    time.sleep(10)
+    # Sleep between every iteration
+    time.sleep(120)
 
     tiles_and_game_data = wf.board_and_tile_data()
 
@@ -384,7 +387,9 @@ while 1:
             if game.id == game_data['id']:
                 break
         else:
-            raise Exception('Could not find any matching game id')
+            # Game has been completed and removed, so local version is removed too
+            games.remove(game)
+            continue
 
         game.update(game_data)
 
@@ -400,7 +405,8 @@ while 1:
                 else:
                     logging.warning('No moves available, replacing all tiles')
                     letter_list = game.letters
-                    wf.swap_tiles(game, letter_list)
+                    # wf.swap_tiles(game, letter_list)
+                    wf.skip_turn(game)
             else:
                 for (x, y, horizontal, word, points) in optimal_moves:
                     tile_positions = []
