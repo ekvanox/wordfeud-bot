@@ -52,7 +52,7 @@ def example():
     b.set_state(state)
 
     # the letters we have on hand, '*' is a blank tile
-    letters = 'rdgpeäv'
+    letters = '*b*'
 
     print('The board is:\n%s' % b)
 
