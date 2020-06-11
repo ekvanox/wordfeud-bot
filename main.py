@@ -245,7 +245,7 @@ class Wordfeud:
             "Cookie": f"sessionid={self.sessionid}",
         }
 
-        data = f"""{{"tiles":{urllib.parse.quote(str(tiles).replace("'",'"'))}}}"""
+        data = f"""{{"tiles":{str(tiles).replace("'",'"')}}}"""
 
         response = requests.post(
             f"https://api.wordfeud.com/wf/game/{game.id}/swap/",
@@ -413,157 +413,190 @@ class WordfeudGame:
         return move_list
 
 
-# Create wordfeud object
-wf = Wordfeud()
+def main(user_id, password):
+    # Create wordfeud object
+    wf = Wordfeud()
 
-# Load wordlist into memory
-logging.info("Loading wordlist")
-wordlist = Wordlist()
-dsso_id = wordlist.read_wordlist(os.path.join("wordlists", "swedish.txt"))
-logging.info("Wordlist loaded")
+    # Generate session id
+    wf.sessionid = wf.login(
+        user_id, password, "en")
 
-# Generate session id
-wf.sessionid = wf.login(
-    32947023, "ea277fcfa2b2076f47430f913891dc8523c28e67", "en")
+    # Variable definition
+    last_check_unix_time = 0
+    games = []
+    vocals = ['E', 'U', 'I', 'O', 'Å', 'A', 'Y', 'Ö', 'Ä']
+    consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+                  'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Z']
 
-# Variable defenition
-last_check_unix_time = 0
-games = []
+    while 1:
+        # Sleep between every iteration
+        time.sleep(PLAYING_SPEED)
 
-# User defined variables
-MAX_GAMES = (
-    # Maximum amount of games that the program tries to play at once (limit: 30)
-    30
-)
-PLAYING_SPEED = 120  # Time in seconds between every check for game updates
-
-while 1:
-    # Sleep between every iteration
-    time.sleep(PLAYING_SPEED)
-
-    # Get game data from server
-    try:
+        # Get game data from server
         game_status_data = wf.game_status_data()
-    except ConnectionError:
-        logging.error("Unable to connect to wordfeud server")
-        continue
 
-    current_unix_time = time.time()
-    last_game_unix_time = 999999999999
-    outgoing_random_games_requests = len(
-        game_status_data["content"]["random_requests"])
+        current_unix_time = time.time()
+        last_game_unix_time = 999999999999
+        outgoing_random_games_requests = len(
+            game_status_data["content"]["random_requests"])
 
-    # Iterate through summary of all games
-    for (iterated_games, game_summary) in enumerate(
-        game_status_data["content"]["games"]
-    ):
-        # Update some variables with each iteration
-        current_game_unix_time = game_summary["updated"]
+        # Iterate through summary of all games
+        for (iterated_games, game_summary) in enumerate(
+            game_status_data["content"]["games"]
+        ):
+            # Update some variables with each iteration
+            current_game_unix_time = game_summary["updated"]
 
-        # If game is out of time order (this separates active games and completed games)
-        if last_game_unix_time < current_game_unix_time:
-            # Calculate amount of currently active games
-            active_games = iterated_games - outgoing_random_games_requests
+            # If game is out of time order (this separates active games and completed games)
+            if last_game_unix_time < current_game_unix_time:
+                # Calculate amount of currently active games
+                active_games = iterated_games - outgoing_random_games_requests
 
-            # Prevent error when there are more active games than the limit (causes exception in for loop)
-            if (MAX_GAMES - active_games) > 0:
-                logging.info("Starting new game againgst random opponent")
-                # Iterate through all "missing" games and start new ones
-                for _ in range(MAX_GAMES - active_games):
+                # Prevent error when there are more active games than the limit (causes exception in for loop)
+                if (ACTIVE_GAMES_LIMIT - active_games) > 0:
+                    logging.info("Starting new game against random opponent")
+                    # Iterate through all "missing" games and start new ones
+                    for _ in range(ACTIVE_GAMES_LIMIT - active_games):
+                        wf.start_new_game_random(4, "random")
+                break
+
+            # Set time for next iteration
+            last_game_unix_time = current_game_unix_time
+
+            # If opponent hasn't played since script last checked
+            if last_check_unix_time > current_game_unix_time:
+                logging.debug("Closing because of timeout")
+                continue
+
+            # Get more data from server about the given game id
+            full_game_data = wf.board_and_tile_data(game_summary["id"])
+
+            # Add board layout to local board storage (re-reading the same board twice will just update the record)
+            wf.update_board_quarters(full_game_data["content"]["boards"])
+
+            # Convert data to WordfeudGame object that automatically parses game info
+            current_game = WordfeudGame(
+                full_game_data["content"]["games"][0], wf.board_quarters
+            )
+
+            # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
+            if not current_game.active:
+                # If game has ended
+                if last_check_unix_time:
+                    # Only start new game if this isn't the first iteration
+                    logging.debug("Game has ended, starting a new one")
                     wf.start_new_game_random(4, "random")
-            break
+                continue
+            elif not current_game.my_turn:
+                # If opponents turn
+                logging.debug("Skipping as it is not players turn")
+                continue
 
-        # Set time for next iteration
-        last_game_unix_time = current_game_unix_time
+            logging.info(
+                f"{current_game.opponent} has played, generating a move")
 
-        # If opponent hasn't played since script last checked
-        if last_check_unix_time > current_game_unix_time:
-            logging.debug("Closing because of timeout")
-            continue
+            # Generate list of optimal moves for current game
+            optimal_moves = current_game.optimal_moves(num_moves=10)
 
-        # Get more data from server about the given game id
-        full_game_data = wf.board_and_tile_data(game_summary["id"])
-
-        # Add board layout to local board storage (re-reading the same board twice will just update the record)
-        wf.update_board_quarters(full_game_data["content"]["boards"])
-
-        # Convert data to WordfeudGame object that automatically parses game info
-        current_game = WordfeudGame(
-            full_game_data["content"]["games"][0], wf.board_quarters
-        )
-
-        # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
-        if not current_game.active:
-            # If game has ended
-            if last_check_unix_time:
-                # Only start new game if this isn't the first iteration
-                logging.debug("Game has ended, starting a new one")
-                wf.start_new_game_random(4, "random")
-            continue
-        elif not current_game.my_turn:
-            # If opponents turn
-            logging.debug("Skipping as it is not players turn")
-            continue
-
-        logging.info(f"{current_game.opponent} has played, generating a move")
-
-        # Generate list of optimal moves for current game
-        optimal_moves = current_game.optimal_moves(num_moves=10)
-
-        if optimal_moves == []:
-            # If no moves are found
-            if current_game.tiles_in_bag < 7:
-                logging.warning("No moves available, skipping turn")
-                wf.skip_turn(current_game)
-            else:
-                logging.warning("No moves available, replacing all tiles")
-                letter_list = current_game.letters
-                # wf.swap_tiles(game, letter_list)
-                wf.skip_turn(current_game)
-        else:
-            # Go through all possible moves until one is accepted by the server (most generated moves are accepted)
-            for (x, y, horizontal, word, points) in optimal_moves:
-                tile_positions = []
-
-                for letter in word:
-                    skip_letter = False
-
-                    for (_x, _y, _, _) in current_game.tiles:
-                        # If brick position is occupied
-                        if (_x, _y) == (x, y):
-                            skip_letter = True
-
-                    if not skip_letter:
-                        tile_positions.append(
-                            [x, y, letter.upper(), not letter.islower()]
-                        )
-
-                    # Iterate position of tiles
-                    if horizontal:
-                        x += 1
-                    else:
-                        y += 1
-
-                try:
-                    # If move was accepted by the server
-                    wf.place_tiles(current_game, word, tile_positions)
-                    logging.info(f'Placed "{word}" for {points} points')
-                    break
-                except AssertionError:
-                    # If move was invalid
-                    logging.warning(f"An invalid move was made: {word}")
-            else:
-                # If no move was accepted by the server
-                # (same result as if no move was found)
+            if optimal_moves == []:
+                # If no moves are found
                 if current_game.tiles_in_bag < 7:
                     logging.warning("No moves available, skipping turn")
                     wf.skip_turn(current_game)
                 else:
                     logging.warning("No moves available, replacing all tiles")
                     letter_list = current_game.letters
-                    # wf.swap_tiles(game, letter_list)
-                    wf.skip_turn(current_game)
-                pass
+                    wf.swap_tiles(game, letter_list)
+                    # wf.skip_turn(current_game)
+            else:
 
-    # Update timestamp for next iteration
-    last_check_unix_time = current_unix_time
+                # Count consonants and vocals in hand
+                vocals_on_hand = [
+                    i for i in current_game.letters if i in vocals]
+                consonants_on_hand = [
+                    i for i in current_game.letters if i in consonants]
+
+                # Go through all possible moves until one is accepted by the server (most generated moves are accepted)
+                for (x, y, horizontal, word, points) in optimal_moves:
+
+                    # Check if it is reasonable to swap tiles
+                    if points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
+                        # Swap all consonants in order to get more vocals
+                        logging.info('Swapping all consonants in hand')
+                        wf.swap_tiles(current_game, consonants_on_hand)
+                        break
+                    elif points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
+                        # Swap all vocals in order to get more consonants
+                        logging.info('Swapping all vocals in hand')
+                        wf.swap_tiles(current_game, vocals_on_hand)
+                        break
+
+                    tile_positions = []
+
+                    for letter in word:
+                        skip_letter = False
+
+                        for (_x, _y, _, _) in current_game.tiles:
+                            # If brick position is occupied
+                            if (_x, _y) == (x, y):
+                                skip_letter = True
+
+                        if not skip_letter:
+                            tile_positions.append(
+                                [x, y, letter.upper(), not letter.islower()]
+                            )
+
+                        # Iterate position of tiles
+                        if horizontal:
+                            x += 1
+                        else:
+                            y += 1
+
+                    try:
+                        # If move was accepted by the server
+                        wf.place_tiles(current_game, word, tile_positions)
+                        logging.info(f'Placed "{word}" for {points} points')
+                        break
+                    except AssertionError:
+                        # If move was invalid
+                        logging.warning(f"An invalid move was made: {word}")
+                else:
+                    # If no move was accepted by the server
+                    # (same result as if no move was found)
+                    if current_game.tiles_in_bag < 7:
+                        logging.warning("No moves available, skipping turn")
+                        wf.skip_turn(current_game)
+                    else:
+                        logging.warning(
+                            "No moves available, replacing all tiles")
+                        letter_list = current_game.letters
+                        wf.swap_tiles(game, letter_list)
+                        # wf.skip_turn(current_game)
+                    pass
+
+        # Update timestamp for next iteration
+        last_check_unix_time = current_unix_time
+
+
+if __name__ == '__main__':
+
+    # Load wordlist into memory
+    logging.info("Loading wordlist")
+    wordlist = Wordlist()
+    dsso_id = wordlist.read_wordlist(os.path.join("wordlists", "swedish.txt"))
+    logging.info("Wordlist loaded")
+
+    ### User defined variables ###
+    ACTIVE_GAMES_LIMIT = 30  # Amount of games that the program plays concurrently
+    PLAYING_SPEED = 120  # Time in seconds between every check for game updates
+    USER_ID = 32947023  # Account user id to log in with
+    PASSWORD = 'ea277fcfa2b2076f47430f913891dc8523c28e67'   # Account password
+
+    while 1:
+        try:
+            main(USER_ID, PASSWORD)
+        except ConnectionError:
+            logging.error("Unable to connect to wordfeud server")
+        except KeyboardInterrupt:
+            logging.critical("Keyboard interuption")
+            break
