@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from emoji import UNICODE_EMOJI
 import requests
 from wordfeud_logic.wordlist import Wordlist
 from wordfeud_logic.board import Board
@@ -321,6 +322,32 @@ class Wordfeud:
 
         return parsed
 
+    def get_full_chat(self, game_id: int):
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Content-Length": "0",
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}",
+        }
+
+        response = requests.get(
+            f"https://api.wordfeud.com/wf/game/{game_id}/chat/",
+            headers=headers,
+            verify=False,
+        )
+
+        parsed = response.json()
+
+        if not (parsed["status"] == "success"):
+            logging.error(
+                f"Unexpected response from server in {inspect.stack()[0][3]}")
+
+        return parsed
+
     def start_new_game_random(self, ruleset: int, board_type: str):
 
         headers = {
@@ -499,6 +526,7 @@ def main(user_id, password):
     opponent_word_high_points_messages = ["Fuck you asshole.", "Get out."]
     random_response_messages = [
         "I am not authorized to answer your question.", "Affirmative", "Talk to the hand."]
+    emoji_response_messages = ["🤖", "🦾", "📡"]
 
     while 1:
         # Sleep between every iteration
@@ -535,9 +563,22 @@ def main(user_id, password):
                 wf.update_chat_read_count(
                     game_id, game_summary['chat_count'])
 
+                # Get chat history to send an "appropriate" response
+                response = wf.get_full_chat(game_id)
+                chat_history_list = response['content']['messages']
+
+                # Select response
+                if is_emoji(chat_history_list[-1]['message']):
+                    chat_response_message = random.choice(
+                        emoji_response_messages)
+                elif 'grattis' in chat_history_list[-1]['message'].lower():
+                    chat_response_message = "I love you, too, sweetheart."
+                else:
+                    chat_response_message = random.choice(
+                        random_response_messages)
                 # Send response message to user
                 wf.send_chat_message(
-                    game_id, random.choice(random_response_messages))
+                    game_id, random.choice(chat_response_message))
 
             # If game is out of time order (this separates active games and completed games)
             if games_are_active and last_game_unix_time < current_game_unix_time:
@@ -691,6 +732,10 @@ def main(user_id, password):
 
         # Update timestamp for next iteration
         last_check_unix_time = current_unix_time
+
+
+def is_emoji(s: str):
+    return s in UNICODE_EMOJI
 
 
 if __name__ == '__main__':
