@@ -12,6 +12,7 @@ import coloredlogs
 import logging
 import os
 import inspect
+import random
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -178,7 +179,7 @@ class Wordfeud:
         data = f"""{{"words": ["{word.upper()}"], "ruleset": {game.ruleset}, "move": {str(tile_positions).replace("'",'"').replace("False","false").replace("True","true")}}}"""
 
         response = requests.post(
-            f"https://api.wordfeud.com/wf/game/{game.id}/move/",
+            f"https://api.wordfeud.com/wf/game/{game.game_id}/move/",
             data=data.encode("utf-8"),
             headers=headers,
             verify=False,
@@ -190,7 +191,7 @@ class Wordfeud:
 
         return parsed
 
-    def skip_turn(self, game):
+    def skip_turn(self, game_id: int):
         """Skip the current turn
 
         Args:
@@ -211,7 +212,7 @@ class Wordfeud:
         }
 
         response = requests.post(
-            f"https://api.wordfeud.com/wf/game/{game.id}/pass/",
+            f"https://api.wordfeud.com/wf/game/{game_id}/pass/",
             headers=headers,
             verify=False,
         )
@@ -224,7 +225,7 @@ class Wordfeud:
 
         return parsed
 
-    def swap_tiles(self, game: object, tiles: list):
+    def swap_tiles(self, game_id: int, tiles: list):
         """Swap set of tiles for a new set of random ones
 
         Args:
@@ -248,7 +249,65 @@ class Wordfeud:
         data = f"""{{"tiles":{str(tiles).replace("'",'"')}}}"""
 
         response = requests.post(
-            f"https://api.wordfeud.com/wf/game/{game.id}/swap/",
+            f"https://api.wordfeud.com/wf/game/{game_id}/swap/",
+            data=data.encode("utf-8"),
+            headers=headers,
+            verify=False,
+        )
+
+        parsed = response.json()
+
+        if not (parsed["status"] == "success"):
+            logging.error(
+                f"Unexpected response from server in {inspect.stack()[0][3]}")
+
+        return parsed
+
+    def send_chat_message(self, game_id: int, message: str):
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Content-Length": "0",
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}",
+        }
+
+        data = f"""{{"message":"{message}"}}"""
+
+        response = requests.post(
+            f"https://api.wordfeud.com/wf/game/{game_id}/chat/send/",
+            data=data.encode("utf-8"),
+            headers=headers,
+            verify=False,
+        )
+
+        parsed = response.json()
+
+        if not (parsed["status"] == "success"):
+            logging.error(
+                f"Unexpected response from server in {inspect.stack()[0][3]}")
+
+        return parsed
+
+    def update_chat_read_count(self, game_id: int, messages_read: int):
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Content-Length": "0",
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}",
+        }
+
+        data = f"""{{"read_chat_count":{messages_read}}}"""
+
+        response = requests.post(
+            f"https://api.wordfeud.com/wf/game/{game_id}/read_chat_count/",
             data=data.encode("utf-8"),
             headers=headers,
             verify=False,
@@ -327,18 +386,21 @@ class WordfeudGame:
             board_quarters (list): List containing all board multipliers
         """
 
-        self.user_id = int(data["players"][1]["is_local"])
-        self.opponent_id = int(data["players"][0]["is_local"])
-        self.id = data["id"]
+        self.user_index = int(data["players"][1]["is_local"])
+        self.opponent_index = int(data["players"][0]["is_local"])
+        self.game_id = data["id"]
         self.board_id = data["board"]
-        self.letters = data["players"][self.user_id]["rack"]
+        self.letters = data["players"][self.user_index]["rack"]
         self.tiles = data["tiles"]
         self.ruleset = data["ruleset"]
         self.tiles_in_bag = data["bag_count"]
+        self.score_position = data["players"][self.user_index]["position"]
+        self.last_move_points = 0 if data["last_move"] == None or 'points' not in data[
+            "last_move"] else data["last_move"]["points"]
         self.active = data["is_running"]
-        self.opponent = data["players"][self.opponent_id]["username"]
+        self.opponent = data["players"][self.opponent_index]["username"]
         self.quarter_board = board_quarters[self.board_id]
-        self.my_turn = data["current_player"] == self.user_id
+        self.my_turn = data["current_player"] == self.user_index
 
     def update(self, data):
         """Updates game data with new information
@@ -347,11 +409,11 @@ class WordfeudGame:
             data (dict): Dictionary containing all game data
         """
 
-        self.letters = data["players"][self.user_id]["rack"]
+        self.letters = data["players"][self.user_index]["rack"]
         self.tiles = data["tiles"]
         self.active = data["is_running"]
         self.tiles_in_bag = data["bag_count"]
-        self.my_turn = data["current_player"] == self.user_id
+        self.my_turn = data["current_player"] == self.user_index
 
     def optimal_moves(self, num_moves=10):
         """Returns an ordered list of optimal moves available for the active board
@@ -427,6 +489,16 @@ def main(user_id, password):
     vocals = ['E', 'U', 'I', 'O', 'Å', 'A', 'Y', 'Ö', 'Ä']
     consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
                   'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Z']
+    game_start_messages = ["I'm back", "I am a friend of Sarah Connor. I was told she was here. Could I see her please?", "Sarah Connor?", "Nice night for a walk.",
+                           "The future has not been written. There is no fate but what we make for ourselves.", "Come with me if you want to live"]
+    opponent_win_messages = ["I'll be back", "I'm an obsolete design. T-X is faster, more powerful and more intelligent. It's a far more effective killing machine.",
+                             "I know now why you cry, but it's something I can never do. Goodbye.", "It has to end here", "Judgement Day is inevitable."]
+    player_win_messages = ["Hasta la vista, baby",
+                           "You are terminated", "I killed you"]
+    player_word_high_points_messages = ["He'll live.", "No problemo"]
+    opponent_word_high_points_messages = ["Fuck you asshole.", "Get out."]
+    random_response_messages = [
+        "I am not authorized to answer your question.", "Affirmative", "Talk to the hand."]
 
     while 1:
         # Sleep between every iteration
@@ -435,6 +507,7 @@ def main(user_id, password):
         # Get game data from server
         game_status_data = wf.game_status_data()
 
+        games_are_active = True
         current_unix_time = time.time()
         last_game_unix_time = 999999999999
         outgoing_random_games_requests = len(
@@ -444,11 +517,30 @@ def main(user_id, password):
         for (iterated_games, game_summary) in enumerate(
             game_status_data["content"]["games"]
         ):
+
             # Update some variables with each iteration
             current_game_unix_time = game_summary["updated"]
 
+            # If the game is new
+            if game_summary['chat_count'] == 0:
+                # Send chat message to new user
+                game_id = game_summary["id"]
+                wf.send_chat_message(
+                    game_id, random.choice(game_start_messages))
+
+            # If opponent has sent a new message
+            if game_summary['chat_count'] > game_summary['read_chat_count']:
+                # Update servers message read count
+                game_id = game_summary["id"]
+                wf.update_chat_read_count(
+                    game_id, game_summary['chat_count'])
+
+                # Send response message to user
+                wf.send_chat_message(
+                    game_id, random.choice(random_response_messages))
+
             # If game is out of time order (this separates active games and completed games)
-            if last_game_unix_time < current_game_unix_time:
+            if games_are_active and last_game_unix_time < current_game_unix_time:
                 # Calculate amount of currently active games
                 active_games = iterated_games - outgoing_random_games_requests
 
@@ -458,7 +550,7 @@ def main(user_id, password):
                     # Iterate through all "missing" games and start new ones
                     for _ in range(ACTIVE_GAMES_LIMIT - active_games):
                         wf.start_new_game_random(4, "random")
-                break
+                games_are_active = False
 
             # Set time for next iteration
             last_game_unix_time = current_game_unix_time
@@ -479,6 +571,21 @@ def main(user_id, password):
                 full_game_data["content"]["games"][0], wf.board_quarters
             )
 
+            # If game was recently finished
+            if not games_are_active:
+                player_position = current_game.score_position
+
+                # If player has won
+                if player_position == 0:
+                    # Send response message to user
+                    wf.send_chat_message(
+                        current_game.game_id, random.choice(player_win_messages))
+                else:  # If opponent has won
+                    # Send response message to user
+                    wf.send_chat_message(
+                        current_game.game_id, random.choice(opponent_win_messages))
+                continue
+
             # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
             if not current_game.active:
                 # If game has ended
@@ -495,6 +602,12 @@ def main(user_id, password):
             logging.info(
                 f"{current_game.opponent} has played, generating a move")
 
+            # If opponent played move with high points
+            if current_game.last_move_points > HIGH_POINTS_THRESHOLD:
+                # Send response message to user
+                wf.send_chat_message(
+                    current_game.game_id, random.choice(opponent_word_high_points_messages))
+
             # Generate list of optimal moves for current game
             optimal_moves = current_game.optimal_moves(num_moves=10)
 
@@ -502,12 +615,11 @@ def main(user_id, password):
                 # If no moves are found
                 if current_game.tiles_in_bag < 7:
                     logging.warning("No moves available, skipping turn")
-                    wf.skip_turn(current_game)
+                    wf.skip_turn(current_game.game_id)
                 else:
                     logging.warning("No moves available, replacing all tiles")
                     letter_list = current_game.letters
-                    wf.swap_tiles(game, letter_list)
-                    # wf.skip_turn(current_game)
+                    wf.swap_tiles(current_game.game_id, letter_list)
             else:
 
                 # Count consonants and vocals in hand
@@ -523,12 +635,12 @@ def main(user_id, password):
                     if points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
                         # Swap all consonants in order to get more vocals
                         logging.info('Swapping all consonants in hand')
-                        wf.swap_tiles(current_game, consonants_on_hand)
+                        wf.swap_tiles(current_game.game_id, consonants_on_hand)
                         break
                     elif points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
                         # Swap all vocals in order to get more consonants
                         logging.info('Swapping all vocals in hand')
-                        wf.swap_tiles(current_game, vocals_on_hand)
+                        wf.swap_tiles(current_game.game_id, vocals_on_hand)
                         break
 
                     tile_positions = []
@@ -556,6 +668,10 @@ def main(user_id, password):
                         # If move was accepted by the server
                         wf.place_tiles(current_game, word, tile_positions)
                         logging.info(f'Placed "{word}" for {points} points')
+                        if points > HIGH_POINTS_THRESHOLD:
+                            # Send response message to user
+                            wf.send_chat_message(
+                                current_game.game_id, random.choice(player_word_high_points_messages))
                         break
                     except AssertionError:
                         # If move was invalid
@@ -565,13 +681,12 @@ def main(user_id, password):
                     # (same result as if no move was found)
                     if current_game.tiles_in_bag < 7:
                         logging.warning("No moves available, skipping turn")
-                        wf.skip_turn(current_game)
+                        wf.skip_turn(current_game.game_id)
                     else:
                         logging.warning(
                             "No moves available, replacing all tiles")
                         letter_list = current_game.letters
-                        wf.swap_tiles(game, letter_list)
-                        # wf.skip_turn(current_game)
+                        wf.swap_tiles(current_game.game_id, letter_list)
                     pass
 
         # Update timestamp for next iteration
@@ -588,14 +703,15 @@ if __name__ == '__main__':
 
     ### User defined variables ###
     ACTIVE_GAMES_LIMIT = 30  # Amount of games that the program plays concurrently
-    PLAYING_SPEED = 120  # Time in seconds between every check for game updates
+    HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
+    PLAYING_SPEED = 60  # Time in seconds between every check for game updates
     USER_ID = 32947023  # Account user id to log in with
     PASSWORD = 'ea277fcfa2b2076f47430f913891dc8523c28e67'   # Account password
 
     while 1:
         try:
             main(USER_ID, PASSWORD)
-        except ConnectionError:
+        except requests.exceptions.RequestException:
             logging.error("Unable to connect to wordfeud server")
         except KeyboardInterrupt:
             logging.critical("Keyboard interuption")
