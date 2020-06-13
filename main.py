@@ -527,11 +527,9 @@ def main(user_id, password):
     random_response_messages = [
         "I am not authorized to answer your question.", "Affirmative", "Talk to the hand."]
     emoji_response_messages = ["🤖", "🦾", "📡"]
+    good_game_response_messages = ["I love you, too, sweetheart."]
 
     while 1:
-        # Sleep between every iteration
-        time.sleep(PLAYING_SPEED)
-
         # Get game data from server
         game_status_data = wf.game_status_data()
 
@@ -572,13 +570,14 @@ def main(user_id, password):
                     chat_response_message = random.choice(
                         emoji_response_messages)
                 elif 'grattis' in chat_history_list[-1]['message'].lower():
-                    chat_response_message = "I love you, too, sweetheart."
+                    chat_response_message = random.choice(
+                        good_game_response_messages)
                 else:
                     chat_response_message = random.choice(
                         random_response_messages)
                 # Send response message to user
                 wf.send_chat_message(
-                    game_id, random.choice(chat_response_message))
+                    game_id, chat_response_message)
 
             # If game is out of time order (this separates active games and completed games)
             if games_are_active and last_game_unix_time < current_game_unix_time:
@@ -597,6 +596,7 @@ def main(user_id, password):
             last_game_unix_time = current_game_unix_time
 
             # If opponent hasn't played since script last checked
+            # Note: last_check_unix_time == 0 during whole first iteration (after startup)
             if last_check_unix_time > current_game_unix_time:
                 logging.debug("Closing because of timeout")
                 continue
@@ -612,8 +612,8 @@ def main(user_id, password):
                 full_game_data["content"]["games"][0], wf.board_quarters
             )
 
-            # If game was recently finished
-            if not games_are_active:
+            # If game was recently finished and it isn't the first iteration
+            if not games_are_active and last_check_unix_time:
                 player_position = current_game.score_position
 
                 # If player has won
@@ -732,6 +732,9 @@ def main(user_id, password):
 
         # Update timestamp for next iteration
         last_check_unix_time = current_unix_time
+
+        # Sleep between every iteration
+        time.sleep(PLAYING_SPEED)
 
 
 def is_emoji(s: str):
