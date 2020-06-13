@@ -377,6 +377,34 @@ class Wordfeud:
 
         return parsed
 
+    def accept_incoming_request(self, request_id: int):
+
+        headers = {
+            "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
+            "Content-Length": "0",
+            "Host": "api.wordfeud.com",
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "Cookie": f"sessionid={self.sessionid}",
+        }
+
+        data = ''
+
+        response = requests.post(
+            f"https://api.wordfeud.com/wf/invite/{request_id}/accept/",
+            data=data.encode("utf-8"),
+            headers=headers,
+            verify=False,
+        )
+
+        parsed = response.json()
+
+        if not (parsed["status"] == "success"):
+            logging.error(
+                f"Unexpected response from server in {inspect.stack()[0][3]}")
+
+        return parsed
+
     def game_status_data(self):
         """Return a summary of all games
 
@@ -421,7 +449,8 @@ class WordfeudGame:
         self.tiles = data["tiles"]
         self.ruleset = data["ruleset"]
         self.tiles_in_bag = data["bag_count"]
-        self.score_position = data["players"][self.user_index]["position"]
+        self.player_score = data["players"][self.user_index]["score"]
+        self.opponent_score = data["players"][self.opponent_index]["score"]
         self.last_move_points = 0 if data["last_move"] == None or 'points' not in data[
             "last_move"] else data["last_move"]["points"]
         self.active = data["is_running"]
@@ -523,11 +552,12 @@ def main(user_id, password):
     player_win_messages = ["Hasta la vista, baby",
                            "You are terminated", "I killed you"]
     player_word_high_points_messages = ["He'll live.", "No problemo"]
-    opponent_word_high_points_messages = ["Fuck you asshole.", "Get out."]
-    random_response_messages = [
-        "I am not authorized to answer your question.", "Affirmative", "Talk to the hand."]
+    opponent_word_high_points_messages = ["Get out."]
+    random_response_messages = ["Affirmative", "Talk to the hand."]
     emoji_response_messages = ["🤖", "🦾", "📡"]
     good_game_response_messages = ["I love you, too, sweetheart."]
+    question_response_messages = [
+        "I am not authorized to answer your question."]
 
     while 1:
         # Get game data from server
@@ -538,6 +568,16 @@ def main(user_id, password):
         last_game_unix_time = 999999999999
         outgoing_random_games_requests = len(
             game_status_data["content"]["random_requests"])
+        incoming_game_requests = len(
+            game_status_data["content"]["invites_received"])
+
+        # Auto accept all incoming game requests (if there are any)
+        if incoming_game_requests:
+            for game_request in game_status_data["content"]["invites_received"]:
+                request_id = game_request['id']
+                inviter = game_request['inviter']
+                logging.info(f'Accepting incomming request from {inviter}')
+                wf.accept_incoming_request(request_id)
 
         # Iterate through summary of all games
         for (iterated_games, game_summary) in enumerate(
@@ -572,6 +612,9 @@ def main(user_id, password):
                 elif 'grattis' in chat_history_list[-1]['message'].lower():
                     chat_response_message = random.choice(
                         good_game_response_messages)
+                elif '?' in chat_history_list[-1]['message'].lower():
+                    chat_response_message = random.choice(
+                        question_response_messages)
                 else:
                     chat_response_message = random.choice(
                         random_response_messages)
@@ -582,11 +625,13 @@ def main(user_id, password):
             # If game is out of time order (this separates active games and completed games)
             if games_are_active and last_game_unix_time < current_game_unix_time:
                 # Calculate amount of currently active games
-                active_games = iterated_games - outgoing_random_games_requests
+                active_games = iterated_games - \
+                    outgoing_random_games_requests - incoming_game_requests
 
                 # Prevent error when there are more active games than the limit (causes exception in for loop)
                 if (ACTIVE_GAMES_LIMIT - active_games) > 0:
-                    logging.info("Starting new game against random opponent")
+                    logging.info(
+                        f"Starting new game against random opponent x{ACTIVE_GAMES_LIMIT - active_games}")
                     # Iterate through all "missing" games and start new ones
                     for _ in range(ACTIVE_GAMES_LIMIT - active_games):
                         wf.start_new_game_random(4, "random")
@@ -613,18 +658,20 @@ def main(user_id, password):
             )
 
             # If game was recently finished and it isn't the first iteration
-            if not games_are_active and last_check_unix_time:
-                player_position = current_game.score_position
+            if not games_are_active:
+                if last_check_unix_time:
+                    # Set variable for checking if user won or not
+                    player_won = current_game.player_score > current_game.opponent_score
 
-                # If player has won
-                if player_position == 0:
-                    # Send response message to user
-                    wf.send_chat_message(
-                        current_game.game_id, random.choice(player_win_messages))
-                else:  # If opponent has won
-                    # Send response message to user
-                    wf.send_chat_message(
-                        current_game.game_id, random.choice(opponent_win_messages))
+                    # If player has won
+                    if player_won:
+                        # Send response message to opponent
+                        wf.send_chat_message(
+                            current_game.game_id, random.choice(player_win_messages))
+                    else:  # If opponent has won
+                        # Send response message to opponent
+                        wf.send_chat_message(
+                            current_game.game_id, random.choice(opponent_win_messages))
                 continue
 
             # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
@@ -662,7 +709,6 @@ def main(user_id, password):
                     letter_list = current_game.letters
                     wf.swap_tiles(current_game.game_id, letter_list)
             else:
-
                 # Count consonants and vocals in hand
                 vocals_on_hand = [
                     i for i in current_game.letters if i in vocals]
@@ -675,12 +721,14 @@ def main(user_id, password):
                     # Check if it is reasonable to swap tiles
                     if points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
                         # Swap all consonants in order to get more vocals
-                        logging.info('Swapping all consonants in hand')
+                        logging.info(
+                            f'Swapping {len(consonants_on_hand)} consonants in hand')
                         wf.swap_tiles(current_game.game_id, consonants_on_hand)
                         break
                     elif points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
                         # Swap all vocals in order to get more consonants
-                        logging.info('Swapping all vocals in hand')
+                        logging.info(
+                            f'Swapping {len(vocals_on_hand)} vocals in hand')
                         wf.swap_tiles(current_game.game_id, vocals_on_hand)
                         break
 
@@ -737,8 +785,11 @@ def main(user_id, password):
         time.sleep(PLAYING_SPEED)
 
 
-def is_emoji(s: str):
-    return s in UNICODE_EMOJI
+def is_emoji(input_string: str):
+    for character in input_string:
+        if not character in UNICODE_EMOJI:
+            return False
+    return True
 
 
 if __name__ == '__main__':
