@@ -560,11 +560,14 @@ def main(user_id, password):
         "I am not authorized to answer your question."]
 
     while 1:
+        # Update time
+        current_unix_time = time.time()
+
         # Get game data from server
         game_status_data = wf.game_status_data()
 
+        # Set variables for later use in loop
         games_are_active = True
-        current_unix_time = time.time()
         last_game_unix_time = 999999999999
         outgoing_random_games_requests = len(
             game_status_data["content"]["random_requests"])
@@ -576,14 +579,13 @@ def main(user_id, password):
             for game_request in game_status_data["content"]["invites_received"]:
                 request_id = game_request['id']
                 inviter = game_request['inviter']
-                logging.info(f'Accepting incomming request from {inviter}')
+                logging.info(f'Accepting incoming request from {inviter}')
                 wf.accept_incoming_request(request_id)
 
         # Iterate through summary of all games
         for (iterated_games, game_summary) in enumerate(
             game_status_data["content"]["games"]
         ):
-
             # Update some variables with each iteration
             current_game_unix_time = game_summary["updated"]
 
