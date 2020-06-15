@@ -797,11 +797,11 @@ def main(user_id, password):
             # Generate list of optimal moves for player in current game
             player_most_points_moves = current_game.player_optimal_moves(
                 num_moves=10)
-            print('OG:', player_most_points_moves)
+            # print('OG:', player_most_points_moves)
 
             # Generate list of probable optimal moves for opponent in current game
             (opponent_most_points_moves, opponent_tiles) = current_game.opponent_optimal_moves(
-                num_moves=3, return_tile_list=True)
+                num_moves=5, return_tile_list=True)
 
             opponent_move_points_list = [opponent_move[4]
                                          for opponent_move in opponent_most_points_moves]
@@ -819,7 +819,7 @@ def main(user_id, password):
                     (x, y, horizontal, word, points), current_game.tiles)
 
                 opponent_most_points_moves_future = current_game.opponent_optimal_moves(
-                    num_moves=3, tiles=opponent_tiles, tile_positions=tile_positions)
+                    num_moves=5, tiles=opponent_tiles, tile_positions=tile_positions)
 
                 opponent_move_points_list_future = [opponent_move_future[4]
                                                     for opponent_move_future in opponent_most_points_moves_future]
@@ -834,7 +834,7 @@ def main(user_id, password):
                     opponent_average_points_future
 
                 # Add multiplier as it is only an estimation
-                smart_points = points+(opponent_points_diff)*0.5
+                smart_points = points+(opponent_points_diff)*0.7
 
                 player_optimal_moves.append(
                     (x, y, horizontal, word, points, smart_points))
@@ -842,7 +842,7 @@ def main(user_id, password):
             # Sort list by most smart score
             player_optimal_moves.sort(reverse=True, key=lambda x: x[5])
 
-            print('NEW:', player_optimal_moves)
+            # print('NEW:', player_optimal_moves)
 
             if player_optimal_moves == []:
                 # If no moves are found
@@ -862,8 +862,6 @@ def main(user_id, password):
 
                 # Go through all possible moves until one is accepted by the server (most generated moves are accepted)
                 for (x, y, horizontal, word, points, smart_points) in player_optimal_moves:
-
-                    print(smart_points)
 
                     # Check if it is reasonable to swap tiles
                     if points < 20 and smart_points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
@@ -941,6 +939,7 @@ if __name__ == '__main__':
             main(USER_ID, PASSWORD)
         except requests.exceptions.RequestException:
             logging.error("Unable to connect to wordfeud server")
+            time.sleep(5)
         except KeyboardInterrupt:
             logging.critical("Keyboard interuption")
             break
