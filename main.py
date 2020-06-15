@@ -458,20 +458,7 @@ class WordfeudGame:
         self.quarter_board = board_quarters[self.board_id]
         self.my_turn = data["current_player"] == self.user_index
 
-    def update(self, data):
-        """Updates game data with new information
-
-        Args:
-            data (dict): Dictionary containing all game data
-        """
-
-        self.letters = data["players"][self.user_index]["rack"]
-        self.tiles = data["tiles"]
-        self.active = data["is_running"]
-        self.tiles_in_bag = data["bag_count"]
-        self.my_turn = data["current_player"] == self.user_index
-
-    def optimal_moves(self, num_moves=10):
+    def player_optimal_moves(self, num_moves=10):
         """Returns an ordered list of optimal moves available for the active board
 
         Args:
@@ -519,7 +506,7 @@ class WordfeudGame:
             "*" if letter == "" else letter.lower() for letter in self.letters
         )
 
-        words = board.calc_all_word_scores(letters, wordlist, dsso_id)
+        words = board.calc_all_word_scores(letters, WORDLIST, dsso_id)
 
         move_list = heapq.nlargest(
             num_moves, words, lambda wordlist: wordlist[4])
@@ -529,6 +516,115 @@ class WordfeudGame:
             return []
 
         return move_list
+
+    def opponent_optimal_moves(self, return_tile_list=False, num_moves=10, tiles=[], tile_positions=[]):
+        """Returns an ordered list of optimal moves available for the active board
+
+        Args:
+            num_moves (int, optional): Amount of moves to return in list. Defaults to 10.
+
+        Returns:
+            list: list of optimal moves
+        """
+
+        tile_positions = tile_positions if tile_positions else self.tiles
+
+        if tiles:
+            trimmed_opponent_possible_tiles_list = tiles
+        else:
+            # Create list with opponents all possible tiles
+            opponent_possible_tiles = 'AAAAAAAAABBCDDDDDEEEEEEEEFFGGGHHIIIIIJKKKLLLLLMMMNNNNNNOOOOOOPPRRRRRRRRSSSSSSSSTTTTTTTTTUUUVVXYZÅÅÄÄÖÖ'
+
+            # Remove all letters on board from opponents possible tile list
+            for (_, _, letter, _) in self.tiles:
+                letter = '*' if letter == '' else letter
+                opponent_possible_tiles = opponent_possible_tiles.replace(
+                    letter, "", 1)
+
+            # Remove all characters from players hand from possible tile list
+            for letter in self.letters:
+                letter = '*' if letter == '' else letter
+                opponent_possible_tiles = opponent_possible_tiles.replace(
+                    letter, "", 1)
+
+            opponent_possible_tiles_list = list(opponent_possible_tiles)
+
+            trimmed_opponent_possible_tiles_list = []
+            for _ in range(len(opponent_possible_tiles_list) if len(opponent_possible_tiles_list) < 7 else 7):
+                trimmed_opponent_possible_tiles_list.append(opponent_possible_tiles_list.pop(random.randint(
+                    0, len(opponent_possible_tiles_list)-1)))
+
+        # create a Board with standard bonus square placement and
+        # set the current state of the game (where tiles are placed)
+        board = Board(qboard=self.quarter_board, expand=False)
+
+        state = [
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+            "               ",
+        ]
+        state = [list(row) for row in state]
+
+        for tile in tile_positions:
+            x = tile[1]
+            y = tile[0]
+            letter = tile[2]
+
+            state[x][y] = letter.lower()
+
+        state = ["".join(row) for row in state]
+        board.set_state(state)
+
+        # The tiles we have on hand, '*' is a blank tile
+        letters = "".join(
+            "*" if letter == "" else letter.lower() for letter in trimmed_opponent_possible_tiles_list
+        )
+
+        words = board.calc_all_word_scores(letters, WORDLIST, dsso_id)
+
+        move_list = heapq.nlargest(
+            num_moves, words, lambda wordlist: wordlist[4])
+
+        return (move_list, trimmed_opponent_possible_tiles_list) if return_tile_list else move_list
+
+
+def word_to_tile_position(move, tiles):
+    (x, y, horizontal, word, points) = move
+
+    tile_positions = []
+
+    for letter in word:
+        skip_letter = False
+
+        for (_x, _y, _, _) in tiles:
+            # If brick position is occupied
+            if (_x, _y) == (x, y):
+                skip_letter = True
+
+        if not skip_letter:
+            tile_positions.append(
+                [x, y, letter.upper(), not letter.islower()]
+            )
+
+        # Iterate position of tiles
+        if horizontal:
+            x += 1
+        else:
+            y += 1
+
+    return tile_positions
 
 
 def main(user_id, password):
@@ -698,10 +794,57 @@ def main(user_id, password):
                 wf.send_chat_message(
                     current_game.game_id, random.choice(opponent_word_high_points_messages))
 
-            # Generate list of optimal moves for current game
-            optimal_moves = current_game.optimal_moves(num_moves=10)
+            # Generate list of optimal moves for player in current game
+            player_most_points_moves = current_game.player_optimal_moves(
+                num_moves=10)
+            print('OG:', player_most_points_moves)
 
-            if optimal_moves == []:
+            # Generate list of probable optimal moves for opponent in current game
+            (opponent_most_points_moves, opponent_tiles) = current_game.opponent_optimal_moves(
+                num_moves=3, return_tile_list=True)
+
+            opponent_move_points_list = [opponent_move[4]
+                                         for opponent_move in opponent_most_points_moves]
+
+            if opponent_move_points_list:
+                opponent_average_points = sum(
+                    opponent_move_points_list) / len(opponent_move_points_list)
+            else:
+                opponent_average_points = 0
+
+            player_optimal_moves = []
+            for (x, y, horizontal, word, points) in player_most_points_moves:
+
+                tile_positions = word_to_tile_position(
+                    (x, y, horizontal, word, points), current_game.tiles)
+
+                opponent_most_points_moves_future = current_game.opponent_optimal_moves(
+                    num_moves=3, tiles=opponent_tiles, tile_positions=tile_positions)
+
+                opponent_move_points_list_future = [opponent_move_future[4]
+                                                    for opponent_move_future in opponent_most_points_moves_future]
+                if opponent_move_points_list_future:
+                    opponent_average_points_future = sum(
+                        opponent_move_points_list_future) / len(opponent_move_points_list_future)
+                else:
+                    opponent_average_points_future = 0
+
+                # Higher opponent_points_diff means better for opponent
+                opponent_points_diff = opponent_average_points - \
+                    opponent_average_points_future
+
+                # Add multiplier as it is only an estimation
+                smart_points = points+(opponent_points_diff)*0.5
+
+                player_optimal_moves.append(
+                    (x, y, horizontal, word, points, smart_points))
+
+            # Sort list by most smart score
+            player_optimal_moves.sort(reverse=True, key=lambda x: x[5])
+
+            print('NEW:', player_optimal_moves)
+
+            if player_optimal_moves == []:
                 # If no moves are found
                 if current_game.tiles_in_bag < 7:
                     logging.warning("No moves available, skipping turn")
@@ -718,42 +861,26 @@ def main(user_id, password):
                     i for i in current_game.letters if i in consonants]
 
                 # Go through all possible moves until one is accepted by the server (most generated moves are accepted)
-                for (x, y, horizontal, word, points) in optimal_moves:
+                for (x, y, horizontal, word, points, smart_points) in player_optimal_moves:
+
+                    print(smart_points)
 
                     # Check if it is reasonable to swap tiles
-                    if points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
+                    if points < 20 and smart_points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
                         # Swap all consonants in order to get more vocals
                         logging.info(
                             f'Swapping {len(consonants_on_hand)} consonants in hand')
                         wf.swap_tiles(current_game.game_id, consonants_on_hand)
                         break
-                    elif points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
+                    elif points < 20 and smart_points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
                         # Swap all vocals in order to get more consonants
                         logging.info(
                             f'Swapping {len(vocals_on_hand)} vocals in hand')
                         wf.swap_tiles(current_game.game_id, vocals_on_hand)
                         break
 
-                    tile_positions = []
-
-                    for letter in word:
-                        skip_letter = False
-
-                        for (_x, _y, _, _) in current_game.tiles:
-                            # If brick position is occupied
-                            if (_x, _y) == (x, y):
-                                skip_letter = True
-
-                        if not skip_letter:
-                            tile_positions.append(
-                                [x, y, letter.upper(), not letter.islower()]
-                            )
-
-                        # Iterate position of tiles
-                        if horizontal:
-                            x += 1
-                        else:
-                            y += 1
+                    tile_positions = word_to_tile_position(
+                        (x, y, horizontal, word, points), current_game.tiles)
 
                     try:
                         # If move was accepted by the server
@@ -798,14 +925,14 @@ if __name__ == '__main__':
 
     # Load wordlist into memory
     logging.info("Loading wordlist")
-    wordlist = Wordlist()
-    dsso_id = wordlist.read_wordlist(os.path.join("wordlists", "swedish.txt"))
+    WORDLIST = Wordlist()
+    dsso_id = WORDLIST.read_wordlist(os.path.join("wordlists", "swedish.txt"))
     logging.info("Wordlist loaded")
 
     ### User defined variables ###
     ACTIVE_GAMES_LIMIT = 30  # Amount of games that the program plays concurrently
     HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
-    PLAYING_SPEED = 60  # Time in seconds between every check for game updates
+    PLAYING_SPEED = 30  # Time in seconds between every check for game updates
     USER_ID = 32947023  # Account user id to log in with
     PASSWORD = 'ea277fcfa2b2076f47430f913891dc8523c28e67'   # Account password
 
