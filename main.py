@@ -265,6 +265,15 @@ class Wordfeud:
         return parsed
 
     def send_chat_message(self, game_id: int, message: str):
+        """Send a chat message to an opponent
+
+        Args:
+            game_id (int): ID of the game with a chat
+            message (str): The message to be sent
+
+        Returns:
+            dict: Parsed server response
+        """
 
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
@@ -294,6 +303,15 @@ class Wordfeud:
         return parsed
 
     def update_chat_read_count(self, game_id: int, messages_read: int):
+        """Inform the server about the number of messages in chat you have seen (in total, not new)
+
+        Args:
+            game_id (int): ID of the game with a chat
+            messages_read (int): The amount of messages you have read
+
+        Returns:
+            dict: Parsed server response
+        """
 
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
@@ -323,6 +341,14 @@ class Wordfeud:
         return parsed
 
     def get_full_chat(self, game_id: int):
+        """Return all chat messages sent in a game session
+
+        Args:
+            game_id (int): ID of the game to read the chat from
+
+        Returns:
+            dict: Parsed server response
+        """
 
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
@@ -349,6 +375,15 @@ class Wordfeud:
         return parsed
 
     def start_new_game_random(self, ruleset: int, board_type: str):
+        """Starts a new game against random opponent
+
+        Args:
+            ruleset (int): Number representing the rules for the game
+            board_type (str): Randomized multipliers or standars
+
+        Returns:
+            dict: Parsed server response
+        """
 
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
@@ -378,6 +413,14 @@ class Wordfeud:
         return parsed
 
     def accept_incoming_request(self, request_id: int):
+        """Accepts an incoming game request
+
+        Args:
+            request_id (int): The ID of the request
+
+        Returns:
+            dict: Parsed server response
+        """
 
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
@@ -601,6 +644,16 @@ class WordfeudGame:
 
 
 def word_to_tile_position(move, tiles):
+    """Converts word from the move generator to total tiles on board
+
+    Args:
+        move (list): List of moves to be made
+        tiles (list): List of all currently placed out tiles on board
+
+    Returns:
+        List: Updated tile positions
+    """
+
     (x, y, horizontal, word, points) = move
 
     tile_positions = []
@@ -925,19 +978,20 @@ def is_emoji(input_string: str):
 
 
 if __name__ == '__main__':
-
     # Load wordlist into memory
     logging.info("Loading wordlist")
     WORDLIST = Wordlist()
-    dsso_id = WORDLIST.read_wordlist(os.path.join("wordlists", "swedish.txt"))
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    dsso_id = WORDLIST.read_wordlist(os.path.join(
+        script_dir, "wordlists", "swedish.txt"))
     logging.info("Wordlist loaded")
 
     ### User defined variables ###
     ACTIVE_GAMES_LIMIT = 30  # Amount of games that the program plays concurrently
     HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
     PLAYING_SPEED = 30  # Time in seconds between every check for game updates
-    USER_ID = 32947023  # Account user id to log in with
-    PASSWORD = 'ea277fcfa2b2076f47430f913891dc8523c28e67'   # Account password
+    USER_ID = os.environ["WORDFEUD_USERNAME"]  # Account user id to log in with
+    PASSWORD = os.environ["WORDFEUD_PASSWORD"]  # Account password
 
     while 1:
         try:
