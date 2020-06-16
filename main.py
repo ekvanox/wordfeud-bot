@@ -812,37 +812,42 @@ def main(user_id, password):
             else:
                 opponent_average_points = 0
 
-            player_optimal_moves = []
-            for (x, y, horizontal, word, points) in player_most_points_moves:
+            # If all tile information is available for the program (only happens in end game)
+            if current_game.tiles_in_bag == 0:
+                # Calculate opponents counter moves (only 1 step ahead)
+                player_optimal_moves = []
+                for (x, y, horizontal, word, points) in player_most_points_moves:
 
-                tile_positions = word_to_tile_position(
-                    (x, y, horizontal, word, points), current_game.tiles)
+                    tile_positions = word_to_tile_position(
+                        (x, y, horizontal, word, points), current_game.tiles)
 
-                opponent_most_points_moves_future = current_game.opponent_optimal_moves(
-                    num_moves=5, tiles=opponent_tiles, tile_positions=tile_positions)
+                    opponent_most_points_moves_future = current_game.opponent_optimal_moves(
+                        num_moves=5, tiles=opponent_tiles, tile_positions=tile_positions)
 
-                opponent_move_points_list_future = [opponent_move_future[4]
-                                                    for opponent_move_future in opponent_most_points_moves_future]
-                if opponent_move_points_list_future:
-                    opponent_average_points_future = sum(
-                        opponent_move_points_list_future) / len(opponent_move_points_list_future)
-                else:
-                    opponent_average_points_future = 0
+                    opponent_move_points_list_future = [opponent_move_future[4]
+                                                        for opponent_move_future in opponent_most_points_moves_future]
+                    if opponent_move_points_list_future:
+                        opponent_average_points_future = sum(
+                            opponent_move_points_list_future) / len(opponent_move_points_list_future)
+                    else:
+                        opponent_average_points_future = 0
 
-                # Higher opponent_points_diff means better for opponent
-                opponent_points_diff = opponent_average_points - \
-                    opponent_average_points_future
+                    # Higher opponent_points_diff means better for opponent
+                    opponent_points_diff = opponent_average_points - \
+                        opponent_average_points_future
 
-                # Add multiplier as it is only an estimation
-                smart_points = points+(opponent_points_diff)*0.7
+                    # Add multiplier as it is only an estimation
+                    smart_points = points+(opponent_points_diff)
 
-                player_optimal_moves.append(
-                    (x, y, horizontal, word, points, smart_points))
+                    player_optimal_moves.append(
+                        (x, y, horizontal, word, points, smart_points))
 
-            # Sort list by most smart score
-            player_optimal_moves.sort(reverse=True, key=lambda x: x[5])
-
-            # print('NEW:', player_optimal_moves)
+                # Sort list by most smart score
+                player_optimal_moves.sort(reverse=True, key=lambda x: x[5])
+            else:
+                # Just add points twice to comply with expected format later
+                player_optimal_moves = [(x, y, horizontal, word, points, points) for (
+                    x, y, horizontal, word, points) in player_most_points_moves]
 
             if player_optimal_moves == []:
                 # If no moves are found
