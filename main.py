@@ -828,7 +828,7 @@ def main(user_id, password):
                 continue
 
             # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
-            if not current_game.active or current_game.my_turn:
+            if not current_game.active or not current_game.my_turn:
                 # If opponents turn
                 logging.debug("Skipping as it is not players turn")
                 continue
