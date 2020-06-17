@@ -710,7 +710,7 @@ def main(user_id, password):
 
     while 1:
         # Update time
-        current_unix_time = time.time()
+        current_unix_time = time.time() - 1
 
         # Get game data from server
         game_status_data = wf.game_status_data()
@@ -850,23 +850,22 @@ def main(user_id, password):
             # Generate list of optimal moves for player in current game
             player_most_points_moves = current_game.player_optimal_moves(
                 num_moves=10)
-            # print('OG:', player_most_points_moves)
-
-            # Generate list of probable optimal moves for opponent in current game
-            (opponent_most_points_moves, opponent_tiles) = current_game.opponent_optimal_moves(
-                num_moves=5, return_tile_list=True)
-
-            opponent_move_points_list = [opponent_move[4]
-                                         for opponent_move in opponent_most_points_moves]
-
-            if opponent_move_points_list:
-                opponent_average_points = sum(
-                    opponent_move_points_list) / len(opponent_move_points_list)
-            else:
-                opponent_average_points = 0
 
             # If all tile information is available for the program (only happens in end game)
             if current_game.tiles_in_bag == 0:
+                # Generate list of probable optimal moves for opponent in current game
+                (opponent_most_points_moves, opponent_tiles) = current_game.opponent_optimal_moves(
+                    num_moves=3, return_tile_list=True)
+
+                opponent_move_points_list = [opponent_move[4]
+                                             for opponent_move in opponent_most_points_moves]
+
+                if opponent_move_points_list:
+                    opponent_average_points = sum(
+                        opponent_move_points_list) / len(opponent_move_points_list)
+                else:
+                    opponent_average_points = 0
+
                 # Calculate opponents counter moves (only 1 step ahead)
                 player_optimal_moves = []
                 for (x, y, horizontal, word, points) in player_most_points_moves:
@@ -875,7 +874,7 @@ def main(user_id, password):
                         (x, y, horizontal, word, points), current_game.tiles)
 
                     opponent_most_points_moves_future = current_game.opponent_optimal_moves(
-                        num_moves=5, tiles=opponent_tiles, tile_positions=tile_positions)
+                        num_moves=3, tiles=opponent_tiles, tile_positions=tile_positions)
 
                     opponent_move_points_list_future = [opponent_move_future[4]
                                                         for opponent_move_future in opponent_most_points_moves_future]
@@ -964,7 +963,10 @@ def main(user_id, password):
                     pass
 
         # Update timestamp for next iteration
-        last_check_unix_time = current_unix_time
+        if random.randint(0, 1000):
+            last_check_unix_time = current_unix_time
+        else:
+            last_check_unix_time = 0
 
         # Sleep between every iteration
         time.sleep(PLAYING_SPEED)
