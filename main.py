@@ -1,19 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from emoji import UNICODE_EMOJI
-import requests
-from wordfeud_logic.wordlist import Wordlist
-from wordfeud_logic.board import Board
 import heapq
-import time
-import urllib3
-import urllib
-import coloredlogs
+import inspect
 import logging
 import os
-import inspect
 import random
+import time
+import urllib
+
+import coloredlogs
+import requests
+import urllib3
+from emoji import UNICODE_EMOJI
+
+from wordfeud_logic.board import Board
+from wordfeud_logic.wordlist import Wordlist
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -826,14 +828,7 @@ def main(user_id, password):
                 continue
 
             # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
-            if not current_game.active:
-                # If game has ended
-                if last_check_unix_time:
-                    # Only start new game if this isn't the first iteration
-                    logging.debug("Game has ended, starting a new one")
-                    wf.start_new_game_random(4, "random")
-                continue
-            elif not current_game.my_turn:
+            if not current_game.active or current_game.my_turn:
                 # If opponents turn
                 logging.debug("Skipping as it is not players turn")
                 continue
