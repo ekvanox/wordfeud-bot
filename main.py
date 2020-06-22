@@ -692,7 +692,6 @@ def main(user_id, password):
 
     # Variable definition
     last_check_unix_time = 0
-    games = []
     vocals = ['E', 'U', 'I', 'O', 'Å', 'A', 'Y', 'Ö', 'Ä']
     consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
                   'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Z']
@@ -809,7 +808,7 @@ def main(user_id, password):
 
                     logging.info(
                         f"Starting new game against random opponent x{num_new_games}")
-                   
+
                     # Iterate through all "missing" games and start new ones
                     for _ in range(num_new_games):
                         wf.start_new_game_random(4, "random")
