@@ -656,7 +656,7 @@ def word_to_tile_position(move, tiles):
         List: Updated tile positions
     """
 
-    (x, y, horizontal, word, points) = move
+    (x, y, horizontal, word, _) = move
 
     tile_positions = []
 
@@ -733,6 +733,23 @@ def main(user_id, password):
                 logging.info(f'Accepting incoming request from {inviter}')
                 wf.accept_incoming_request(request_id)
 
+        # Start new games if under limit (useful if there are no active games at all)
+        if len(game_status_data["content"]["games"]) < ACTIVE_GAMES_LIMIT:
+            # Calculate the amount of new games available
+            num_new_games = ACTIVE_GAMES_LIMIT - \
+                len(game_status_data["content"]["games"])
+
+            # As the wordfeud server limits the amount of outgoing game requests to 5
+            num_new_games = num_new_games if num_new_games < 5 else 5
+            num_new_games -= outgoing_random_games_requests + incoming_game_requests
+
+            logging.info(
+                f"Starting new game against random opponent x{num_new_games}")
+
+            # Start the new games
+            for _ in range(num_new_games):
+                wf.start_new_game_random(4, "random")
+
         # Iterate through summary of all games
         for (iterated_games, game_summary) in enumerate(
             game_status_data["content"]["games"]
@@ -783,10 +800,18 @@ def main(user_id, password):
 
                 # Prevent error when there are more active games than the limit (causes exception in for loop)
                 if (ACTIVE_GAMES_LIMIT - active_games) > 0:
+                    # Calculate amount of new games to be started
+                    num_new_games = ACTIVE_GAMES_LIMIT - active_games
+
+                    # As the wordfeud server limits the amount of outgoing game requests to 5
+                    num_new_games = num_new_games if num_new_games < 5 else 5
+                    num_new_games -= outgoing_random_games_requests + incoming_game_requests
+
                     logging.info(
-                        f"Starting new game against random opponent x{ACTIVE_GAMES_LIMIT - active_games}")
+                        f"Starting new game against random opponent x{num_new_games}")
+                   
                     # Iterate through all "missing" games and start new ones
-                    for _ in range(ACTIVE_GAMES_LIMIT - active_games):
+                    for _ in range(num_new_games):
                         wf.start_new_game_random(4, "random")
                 games_are_active = False
 
