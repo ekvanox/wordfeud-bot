@@ -18,31 +18,6 @@ from emoji import UNICODE_EMOJI
 from wordfeud_logic.board import Board
 from wordfeud_logic.wordlist import Wordlist
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Setup colored logging
-coloredlogs.install(
-    level=20,
-    fmt="[%(levelname)s] %(asctime)s: %(message)s",
-    level_styles={
-        "critical": {"bold": True, "color": "red"},
-        "debug": {"color": "green"},
-        "error": {"color": "red"},
-        "info": {"color": "white"},
-        "notice": {"color": "magenta"},
-        "spam": {"color": "green", "faint": True},
-        "success": {"bold": True, "color": "green"},
-        "verbose": {"color": "blue"},
-        "warning": {"color": "yellow"},
-    },
-    field_styles={
-        "asctime": {"color": "cyan"},
-        "levelname": {"bold": True, "color": "black"},
-    },
-)
-
-logging.info("Script has started")
-
 
 class Wordfeud:
     def login(self, user_id: int, password: str, language_code: str):
@@ -684,6 +659,10 @@ def word_to_tile_position(move, tiles):
 
 
 def main(user_id, password):
+
+    # Suppres warnings
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     # Create wordfeud object
     wf = Wordfeud()
 
@@ -1000,6 +979,30 @@ def is_emoji(input_string: str):
 
 
 if __name__ == '__main__':
+
+    logging.info("Script has started")
+
+    # Setup colored logging
+    coloredlogs.install(
+        level=20,
+        fmt="[%(levelname)s] %(asctime)s: %(message)s",
+        level_styles={
+            "critical": {"bold": True, "color": "red"},
+            "debug": {"color": "green"},
+            "error": {"color": "red"},
+            "info": {"color": "white"},
+            "notice": {"color": "magenta"},
+            "spam": {"color": "green", "faint": True},
+            "success": {"bold": True, "color": "green"},
+            "verbose": {"color": "blue"},
+            "warning": {"color": "yellow"},
+        },
+        field_styles={
+            "asctime": {"color": "cyan"},
+            "levelname": {"bold": True, "color": "black"},
+        },
+    )
+
     # Load wordlist into memory
     logging.info("Loading wordlist")
     WORDLIST = Wordlist()
@@ -1019,8 +1022,8 @@ if __name__ == '__main__':
     logging.info(f'User id: {USER_ID}')
     logging.info(f'Password: {PASSWORD}')
 
-    while 1:
-        try:
+  while 1:
+       try:
             main(USER_ID, PASSWORD)
         except requests.exceptions.RequestException:
             logging.error("Unable to connect to wordfeud server")
