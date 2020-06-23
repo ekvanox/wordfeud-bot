@@ -497,7 +497,7 @@ class WordfeudGame:
         self.tiles_in_bag = data["bag_count"]
         self.player_score = data["players"][self.user_index]["score"]
         self.opponent_score = data["players"][self.opponent_index]["score"]
-        self.last_move_points = 0 if data["last_move"] == None or 'points' not in data[
+        self.last_move_points = 0 if data["last_move"] is None or 'points' not in data[
             "last_move"] else data["last_move"]["points"]
         self.active = data["is_running"]
         self.opponent = data["players"][self.opponent_index]["username"]
@@ -981,7 +981,6 @@ def main(user_id, password):
                             "No moves available, replacing all tiles")
                         letter_list = current_game.letters
                         wf.swap_tiles(current_game.game_id, letter_list)
-                    pass
 
         # Update timestamp for next iteration
         if random.randint(0, 1000):
