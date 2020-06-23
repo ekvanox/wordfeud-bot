@@ -1014,6 +1014,9 @@ if __name__ == '__main__':
     USER_ID = os.environ["WORDFEUD_USERNAME"]  # Account user id to log in with
     PASSWORD = os.environ["WORDFEUD_PASSWORD"]  # Account password
 
+    logging.error(f'User id: {USER_ID}')
+    logging.error(f'Password: {PASSWORD}')
+
     while 1:
         try:
             main(USER_ID, PASSWORD)
