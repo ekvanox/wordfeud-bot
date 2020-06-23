@@ -75,7 +75,7 @@ class Wordfeud:
             "https://api.wordfeud.com/wf/user/login/id/",
             headers=headers,
             data=data.encode("utf-8"),
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         # Verify that server accepted credentials
@@ -108,14 +108,14 @@ class Wordfeud:
             response = requests.get(
                 f"https://api.wordfeud.com/wf/user/games/detail/?known_tile_points=&known_boards=",
                 headers=headers,
-                verify=False,
+                verify=VERIFY_SSL,
             )
         else:
             # Data about specific game
             response = requests.get(
                 f"https://api.wordfeud.com/wf/games/{game_id}/?known_tile_points=&known_boards=",
                 headers=headers,
-                verify=False,
+                verify=VERIFY_SSL,
             )
 
         parsed = response.json()
@@ -186,7 +186,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/game/{game.game_id}/move/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -218,7 +218,7 @@ class Wordfeud:
         response = requests.post(
             f"https://api.wordfeud.com/wf/game/{game_id}/pass/",
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -256,7 +256,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/game/{game_id}/swap/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -294,7 +294,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/game/{game_id}/chat/send/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -332,7 +332,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/game/{game_id}/read_chat_count/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -366,7 +366,7 @@ class Wordfeud:
         response = requests.get(
             f"https://api.wordfeud.com/wf/game/{game_id}/chat/",
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -404,7 +404,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/random_request/create/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -440,7 +440,7 @@ class Wordfeud:
             f"https://api.wordfeud.com/wf/invite/{request_id}/accept/",
             data=data.encode("utf-8"),
             headers=headers,
-            verify=False,
+            verify=VERIFY_SSL,
         )
 
         parsed = response.json()
@@ -466,7 +466,7 @@ class Wordfeud:
         }
 
         response = requests.get(
-            f"https://api.wordfeud.com/wf/user/status/", headers=headers, verify=False
+            f"https://api.wordfeud.com/wf/user/status/", headers=headers, verify=VERIFY_SSL
         )
 
         parsed = response.json()
@@ -1013,6 +1013,7 @@ if __name__ == '__main__':
     ACTIVE_GAMES_LIMIT = 3  # Amount of games that the program plays concurrently
     HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
     PLAYING_SPEED = 600  # Time in seconds between every check for game updates
+    VERIFY_SSL = True   # Choose if requests should verify encryption
     USER_ID = os.environ["WORDFEUD_USERNAME"]  # Account user id to log in with
     PASSWORD = os.environ["WORDFEUD_PASSWORD"]  # Account password
 
