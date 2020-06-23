@@ -8,6 +8,7 @@ import os
 import random
 import time
 import urllib
+import sys
 
 import coloredlogs
 import requests
@@ -1005,7 +1006,7 @@ if __name__ == '__main__':
     WORDLIST = Wordlist()
     script_dir = os.path.dirname(os.path.realpath(__file__))
     dsso_id = WORDLIST.read_wordlist(os.path.join(
-        script_dir, "wordlists", "swedish.txt"))
+        script_dir, "..", 'data', "wordlists", "swedish.txt"))
     logging.info("Wordlist loaded")
 
     ### User defined variables ###
