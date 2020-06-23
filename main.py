@@ -692,6 +692,7 @@ def main(user_id, password):
 
     # Variable definition
     last_check_unix_time = 0
+    max_outgoing_requests = 3
     vocals = ['E', 'U', 'I', 'O', 'Å', 'A', 'Y', 'Ö', 'Ä']
     consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
                   'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Z']
@@ -738,8 +739,8 @@ def main(user_id, password):
             num_new_games = ACTIVE_GAMES_LIMIT - \
                 len(game_status_data["content"]["games"])
 
-            # As the wordfeud server limits the amount of outgoing game requests to 5
-            num_new_games = num_new_games if num_new_games < 5 else 5
+            # As the wordfeud server limits the amount of outgoing game requests
+            num_new_games = num_new_games if num_new_games < max_outgoing_requests else max_outgoing_requests
             num_new_games -= outgoing_random_games_requests + incoming_game_requests
 
             logging.info(
@@ -802,8 +803,8 @@ def main(user_id, password):
                     # Calculate amount of new games to be started
                     num_new_games = ACTIVE_GAMES_LIMIT - active_games
 
-                    # As the wordfeud server limits the amount of outgoing game requests to 5
-                    num_new_games = num_new_games if num_new_games < 5 else 5
+                    # As the wordfeud server limits the amount of outgoing game requests
+                    num_new_games = num_new_games if num_new_games < max_outgoing_requests else max_outgoing_requests
                     num_new_games -= outgoing_random_games_requests + incoming_game_requests
 
                     logging.info(
@@ -1008,14 +1009,14 @@ if __name__ == '__main__':
     logging.info("Wordlist loaded")
 
     ### User defined variables ###
-    ACTIVE_GAMES_LIMIT = 30  # Amount of games that the program plays concurrently
+    ACTIVE_GAMES_LIMIT = 3  # Amount of games that the program plays concurrently
     HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
-    PLAYING_SPEED = 30  # Time in seconds between every check for game updates
+    PLAYING_SPEED = 600  # Time in seconds between every check for game updates
     USER_ID = os.environ["WORDFEUD_USERNAME"]  # Account user id to log in with
     PASSWORD = os.environ["WORDFEUD_PASSWORD"]  # Account password
 
-    logging.error(f'User id: {USER_ID}')
-    logging.error(f'Password: {PASSWORD}')
+    logging.info(f'User id: {USER_ID}')
+    logging.info(f'Password: {PASSWORD}')
 
     while 1:
         try:
