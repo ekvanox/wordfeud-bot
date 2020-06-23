@@ -1,6 +1,6 @@
 # Wordfeud addon for T-800
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)
+[![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot) ![GitHub All Releases](https://img.shields.io/github/downloads/Pricehacker/wordfeud-bot/total) ![GitHub repo size](https://img.shields.io/github/repo-size/Pricehacker/wordfeud-bot) ![GitHub](https://img.shields.io/github/license/Pricehacker/wordfeud-bot)
 
 A python script that impersonates T-800 while automatically laying out moves using the private wordfeud API.
 
@@ -17,6 +17,12 @@ cd wordfeud-bot
 pip install -r requirements.txt
 ```
 
+## Collecting credentials
+
+Currently, the credentials (user ID & password) are not captured by the wordfeud bot itself, and therefore have to be found prior to using it.
+
+[Here](https://heimdal.ml/projects/wordfeud-bot/) is a guide on how to do so (windows only)
+
 ## Usage
 
 ### Windows
@@ -24,9 +30,9 @@ pip install -r requirements.txt
 Set your wordfeud account credentials as environment variables (you only have to do this once):
 
 ```cmd
-:: Set the username
+:: Set the username (remove the curly braces)
 setx WORDFEUD_USERNAME {your user ID here}
-:: Set the password
+:: Set the password (remove the curly braces)
 setx WORDFEUD_PASSWORD {your password here}
 ```
 
@@ -44,9 +50,9 @@ python3 main.py
 Set your wordfeud account credentials as environment variables:
 
 ```Bash
-# Set the username
+# Set the username (remove the curly braces)
 WORDFEUD_USERNAME={your user ID here}
-# Set the password
+# Set the password (remove the curly braces)
 WORDFEUD_PASSWORD={your password here}
 ```
 
@@ -61,6 +67,24 @@ cd wordfeud-bot
 python3 main.py
 ```
 
+### Docker
+
+Build your docker image:
+
+```bash
+# Go into the repository
+cd wordfeud-bot
+# Build the docker image
+docker build -t wordfeudbot .
+```
+
+Start docker container with your credentials as environment variables:
+
+```bash
+# Remove the curly braces
+docker run -e WORDFEUD_USERNAME={your user ID here} -e WORDFEUD_PASSWORD={your password here} wordfeudbot
+```
+
 ## Compatibility
 
 ### Operating systems (tested)
@@ -73,3 +97,7 @@ python3 main.py
 
 - 3.8.2
 - 3.6.10
+
+## Read more
+
+Documentation from the development process can be found [here](https://heimdal.ml/projects/wordfeud-bot/).
