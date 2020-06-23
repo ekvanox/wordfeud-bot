@@ -1022,8 +1022,8 @@ if __name__ == '__main__':
     logging.info(f'User id: {USER_ID}')
     logging.info(f'Password: {PASSWORD}')
 
-  while 1:
-       try:
+    while 1:
+        try:
             main(USER_ID, PASSWORD)
         except requests.exceptions.RequestException:
             logging.error("Unable to connect to wordfeud server")
