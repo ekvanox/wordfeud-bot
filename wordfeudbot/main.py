@@ -1012,10 +1012,10 @@ if __name__ == '__main__':
         description='Start a wordfeud bot that plays automatically')
     parser.add_argument('--user_id', type=str,
                         help='Wordfeud user id for login (e.g. "20392863")',
-                        default=os.environ["WORDFEUD_USERNAME"])
+                        default=os.getenv('WORDFEUD_USERNAME', 'undefined'))
     parser.add_argument('--password', type=str,
                         help='Wordfeud password for login (e.g. "ea270fcfb2b2076e77a30f933891de7325c48a28")',
-                        default=os.environ["WORDFEUD_PASSWORD"])
+                        default=os.getenv('WORDFEUD_PASSWORD', 'undefined'))
     parser.add_argument('--active_games_limit', type=int,
                         help='Amount of games that the program plays concurrently (default: 3)', default=3)
     parser.add_argument('--high_points_threshold', type=int,
