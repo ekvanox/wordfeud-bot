@@ -47,7 +47,8 @@ class Wordlist(object):
             self.word_count += 1
 
     def words(self, row, rowdata, letters, variant):
-        assert (len(row) == len(rowdata)), ("%d == %d" % (len(row), len(rowdata)))
+        assert (len(row) == len(rowdata)), ("%d == %d" %
+                                            (len(row), len(rowdata)))
         row = row+' '
         for pos in range(len(row)-1):
             if pos > 0 and row[pos-1] != ' ':
@@ -58,7 +59,8 @@ class Wordlist(object):
         if word == ' ':
             return self.all_chars
         i = word.find(' ')
-        m = list(self.root.matches(word+' ', [(self.all_chars, True)]*(len(word)+1), 0, '*', variant))
+        m = list(self.root.matches(
+            word+' ', [(self.all_chars, True)]*(len(word)+1), 0, '*', variant))
         return set(match[i].lower() for match in m)
 
     def is_word(self, word, variant=1):
