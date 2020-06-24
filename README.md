@@ -1,6 +1,9 @@
 # Wordfeud addon for T-800
 
-[![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot) ![GitHub repo size](https://img.shields.io/github/repo-size/Pricehacker/wordfeud-bot) ![GitHub All Releases](https://img.shields.io/github/downloads/Pricehacker/wordfeud-bot/total) [![Known Vulnerabilities](https://snyk.io/test/github/Pricehacker/wordfeud-bot/badge.svg?targetFile=requirements.txt)](https://snyk.io/test/github/Pricehacker/wordfeud-bot?targetFile=requirements.txt) ![License](https://img.shields.io/github/license/Pricehacker/wordfeud-bot)
+[![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)
+![GitHub repo size](https://img.shields.io/github/repo-size/Pricehacker/wordfeud-bot)
+[![Build Status](https://travis-ci.com/Pricehacker/wordfeud-bot.svg?branch=master)](https://travis-ci.com/Pricehacker/wordfeud-bot)
+![License](https://img.shields.io/github/license/Pricehacker/wordfeud-bot)
 
 A python script that impersonates T-800 while automatically laying out moves using the private wordfeud API.
 
