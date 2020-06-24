@@ -8,4 +8,4 @@ COPY . /app
 
 RUN pip install -r requirements.txt
 
-CMD [ "python", "./src/main.py" ]
+CMD [ "python", "./wordfeudbot/main.py" ]
