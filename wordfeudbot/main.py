@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
+import argparse
 import heapq
 import inspect
 import logging
@@ -1007,6 +1007,36 @@ if __name__ == '__main__':
         },
     )
 
+    # Setup parser for arguments
+    parser = argparse.ArgumentParser(
+        description='Start a wordfeud bot that plays automatically')
+    parser.add_argument('--user_id', type=str,
+                        help='Wordfeud user id for login (e.g. "20392863")',
+                        default=os.environ["WORDFEUD_USERNAME"])
+    parser.add_argument('--password', type=str,
+                        help='Wordfeud password for login (e.g. "ea270fcfb2b2076e77a30f933891de7325c48a28")',
+                        default=os.environ["WORDFEUD_PASSWORD"])
+    parser.add_argument('--active_games_limit', type=int,
+                        help='Amount of games that the program plays concurrently (default: 3)', default=3)
+    parser.add_argument('--high_points_threshold', type=int,
+                        help='Points needed to trigger unique chat message (default: 100)', default=100)
+    parser.add_argument('--playing_speed', type=int,
+                        help='Time in seconds between every check for game updates (default: 600)', default=600)
+    parser.add_argument('--verify_ssl', type=bool,
+                        help='Choose if requests should verify encryption (default: True)', default=True)
+    var_dict = vars(parser.parse_args())
+
+    # Define globals
+    USER_ID = var_dict['user_id']
+    PASSWORD = var_dict['password']
+    ACTIVE_GAMES_LIMIT = var_dict['active_games_limit']
+    HIGH_POINTS_THRESHOLD = var_dict['high_points_threshold']
+    PLAYING_SPEED = var_dict['playing_speed']
+    VERIFY_SSL = var_dict['verify_ssl']
+
+    logging.info(f'User id: {USER_ID}')
+    logging.info(f'Password: {PASSWORD}')
+
     # Load wordlist into memory
     logging.info("Loading wordlist")
     WORDLIST = Wordlist()
@@ -1014,17 +1044,6 @@ if __name__ == '__main__':
     dsso_id = WORDLIST.read_wordlist(os.path.join(
         script_dir, 'data', 'wordlists', "swedish.txt"))
     logging.info("Wordlist loaded")
-
-    ### User defined variables ###
-    ACTIVE_GAMES_LIMIT = 3  # Amount of games that the program plays concurrently
-    HIGH_POINTS_THRESHOLD = 100  # Points needed to trigger unique chat message
-    PLAYING_SPEED = 600  # Time in seconds between every check for game updates
-    VERIFY_SSL = True   # Choose if requests should verify encryption
-    USER_ID = os.environ["WORDFEUD_USERNAME"]  # Account user id to log in with
-    PASSWORD = os.environ["WORDFEUD_PASSWORD"]  # Account password
-
-    logging.info(f'User id: {USER_ID}')
-    logging.info(f'Password: {PASSWORD}')
 
     while 1:
         try:
