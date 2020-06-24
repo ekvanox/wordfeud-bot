@@ -33,7 +33,7 @@ jobs:
           pip install pytest
           pytest
       - name: wemake-python-styleguide
-        uses: wemake-services/wemake-python-styleguide
+        uses: wemake-services/wemake-python-styleguide@master
         continue-on-error: true
         with:
           reporter: "github-pr-review"
