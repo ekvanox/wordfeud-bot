@@ -1,0 +1,41 @@
+name: Python Pull Request Workflow
+on: [pull_request]
+jobs:
+  autopep8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: autopep8
+        uses: peter-evans/autopep8@v1
+        with:
+          args: --recursive --in-place --aggressive --aggressive .
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v2
+        with:
+          commit-message: autopep8 action fixes
+          committer: Peter Evans <peter-evans@users.noreply.github.com>
+          title: Fixes by autopep8 action
+          body: This is an auto-generated PR with fixes by autopep8.
+          labels: autopep8, automated pr
+          reviewers: peter-evans
+          branch: autopep8-patches
+  qa:
+    name: Quality check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.8
+      - name: Run unit tests
+        run: |
+          pip install pytest
+          pytest
+      - name: wemake-python-styleguide
+        uses: wemake-services/wemake-python-styleguide
+        continue-on-error: true
+        with:
+          reporter: "github-pr-review"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
