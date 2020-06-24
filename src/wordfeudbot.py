@@ -15,33 +15,12 @@ import requests
 import urllib3
 from emoji import UNICODE_EMOJI
 
-from wordfeud_logic.board import Board
-from wordfeud_logic.wordlist import Wordlist
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Setup colored logging
-coloredlogs.install(
-    level=20,
-    fmt="[%(levelname)s] %(asctime)s: %(message)s",
-    level_styles={
-        "critical": {"bold": True, "color": "red"},
-        "debug": {"color": "green"},
-        "error": {"color": "red"},
-        "info": {"color": "white"},
-        "notice": {"color": "magenta"},
-        "spam": {"color": "green", "faint": True},
-        "success": {"bold": True, "color": "green"},
-        "verbose": {"color": "blue"},
-        "warning": {"color": "yellow"},
-    },
-    field_styles={
-        "asctime": {"color": "cyan"},
-        "levelname": {"bold": True, "color": "black"},
-    },
-)
-
-logging.info("Script has started")
+try:    # Usually works
+    from wordfeud_logic.board import Board
+    from wordfeud_logic.wordlist import Wordlist
+except ImportError:  # Needed for tests to run
+    from src.wordfeud_logic.board import Board
+    from src.wordfeud_logic.wordlist import Wordlist
 
 
 class Wordfeud:
@@ -497,7 +476,7 @@ class WordfeudGame:
         self.tiles_in_bag = data["bag_count"]
         self.player_score = data["players"][self.user_index]["score"]
         self.opponent_score = data["players"][self.opponent_index]["score"]
-        self.last_move_points = 0 if data["last_move"] == None or 'points' not in data[
+        self.last_move_points = 0 if data["last_move"] is None or 'points' not in data[
             "last_move"] else data["last_move"]["points"]
         self.active = data["is_running"]
         self.opponent = data["players"][self.opponent_index]["username"]
@@ -684,6 +663,10 @@ def word_to_tile_position(move, tiles):
 
 
 def main(user_id, password):
+
+    # Suppres warnings
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     # Create wordfeud object
     wf = Wordfeud()
 
@@ -981,7 +964,6 @@ def main(user_id, password):
                             "No moves available, replacing all tiles")
                         letter_list = current_game.letters
                         wf.swap_tiles(current_game.game_id, letter_list)
-                    pass
 
         # Update timestamp for next iteration
         if random.randint(0, 1000):
@@ -1001,6 +983,30 @@ def is_emoji(input_string: str):
 
 
 if __name__ == '__main__':
+
+    logging.info("Script has started")
+
+    # Setup colored logging
+    coloredlogs.install(
+        level=20,
+        fmt="[%(levelname)s] %(asctime)s: %(message)s",
+        level_styles={
+            "critical": {"bold": True, "color": "red"},
+            "debug": {"color": "green"},
+            "error": {"color": "red"},
+            "info": {"color": "white"},
+            "notice": {"color": "magenta"},
+            "spam": {"color": "green", "faint": True},
+            "success": {"bold": True, "color": "green"},
+            "verbose": {"color": "blue"},
+            "warning": {"color": "yellow"},
+        },
+        field_styles={
+            "asctime": {"color": "cyan"},
+            "levelname": {"bold": True, "color": "black"},
+        },
+    )
+
     # Load wordlist into memory
     logging.info("Loading wordlist")
     WORDLIST = Wordlist()
