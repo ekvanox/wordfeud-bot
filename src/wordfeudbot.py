@@ -18,7 +18,7 @@ from emoji import UNICODE_EMOJI
 try:    # Usually works
     from wordfeud_logic.board import Board
     from wordfeud_logic.wordlist import Wordlist
-except:  # Needed for tests to run
+except ImportError:  # Needed for tests to run
     from src.wordfeud_logic.board import Board
     from src.wordfeud_logic.wordlist import Wordlist
 
