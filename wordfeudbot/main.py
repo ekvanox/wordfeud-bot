@@ -19,8 +19,8 @@ try:    # Usually works
     from wordfeud_logic.board import Board
     from wordfeud_logic.wordlist import Wordlist
 except ImportError:  # Needed for tests to run
-    from src.wordfeud_logic.board import Board
-    from src.wordfeud_logic.wordlist import Wordlist
+    from wordfeudbot.wordfeud_logic.board import Board
+    from wordfeudbot.wordfeud_logic.wordlist import Wordlist
 
 
 class Wordfeud:

@@ -1,4 +1,4 @@
-import src.wordfeudbot as wfbot
+import wordfeudbot.main as wfbot
 
 
 def test_is_emoji():
