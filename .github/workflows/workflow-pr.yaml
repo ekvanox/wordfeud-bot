@@ -1,6 +1,17 @@
 name: Python Pull Request Workflow
 on: [pull_request]
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+      - name: Commit Linter
+        uses: wagoid/commitlint-github-action@v1.6.0
   autopep8:
     runs-on: ubuntu-latest
     steps:
