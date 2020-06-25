@@ -7,8 +7,6 @@ import logging
 import os
 import random
 import time
-import urllib
-import sys
 
 import coloredlogs
 import requests
@@ -403,7 +401,6 @@ class Wordfeud:
         Returns:
             dict: Parsed server response
         """
-
         headers = {
             "User-Agent": "WebFeudClient/3.0.17 (Android 10)",
             "Content-Length": "0",
@@ -542,7 +539,7 @@ class WordfeudGame:
 
         return move_list
 
-    def opponent_optimal_moves(self, return_tile_list=False, num_moves=10, tiles=[], tile_positions=[]):
+    def opponent_optimal_moves(self, return_tile_list=False, num_moves=10, tiles=None, tile_positions=None):
         """Returns an ordered list of optimal moves available for the active board
 
         Args:
