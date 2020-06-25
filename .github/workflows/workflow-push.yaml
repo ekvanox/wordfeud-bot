@@ -9,5 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 1
-      - uses: wagoid/commitlint-github-action@v1
+      - name: Commit Linter
+        uses: wagoid/commitlint-github-action@v1.6.0
