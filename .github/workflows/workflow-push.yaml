@@ -1,4 +1,4 @@
-name: Commitlint
+name: Python push workflow
 on: [push]
 
 jobs:

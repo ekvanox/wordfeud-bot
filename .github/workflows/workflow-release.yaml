@@ -1,0 +1,35 @@
+name: Python release workflow
+on:
+  release:
+    types: [published]
+
+jobs:
+  dockerhub:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          ref: ${{ github.head_ref }}
+          repository: Pricehacker/wordfeud-bot
+          add_git_labels: org.opencontainers.image.version
+      - name: Docker push to docker hub
+        uses: docker/build-push-action@v1.1.0
+  github:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          username: Pricehacker
+          password: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+          registry: docker.pkg.github.com
+          repository: Pricehacker/wordfeud-bot
+          add_git_labels: org.opencontainers.image.version
+      - name: Docker push to github
+        uses: docker/build-push-action@v1.1.0
