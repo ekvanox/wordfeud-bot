@@ -2,6 +2,7 @@
 
 [![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Pricehacker/wordfeud-bot)
+[![CodeFactor](https://www.codefactor.io/repository/github/pricehacker/wordfeud-bot/badge)](https://www.codefactor.io/repository/github/pricehacker/wordfeud-bot)
 [![Build Status](https://travis-ci.com/Pricehacker/wordfeud-bot.svg?branch=master)](https://travis-ci.com/Pricehacker/wordfeud-bot)
 ![License](https://img.shields.io/github/license/Pricehacker/wordfeud-bot)
 
