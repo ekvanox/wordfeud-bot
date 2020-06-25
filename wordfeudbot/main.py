@@ -59,6 +59,9 @@ class Wordfeud:
         if response.json()["status"] == "error":
             raise Exception("Server returned error message")
 
+        self.user_id = user_id
+        self.password = password
+
         # Make cookies into a dictionary
         cookies = response.cookies.get_dict()
 
@@ -168,7 +171,8 @@ class Wordfeud:
 
         parsed = response.json()
 
-        assert parsed["status"] == "success", "Unexpected response from server"
+        if not (parsed["status"] == "success"):
+            raise AssertionError("Unexpected response from server")
 
         return parsed
 
