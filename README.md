@@ -1,5 +1,6 @@
 # Wordfeud addon for T-800
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7be86808551b481e9acfe49ce5d87d98)](https://app.codacy.com/manual/admin_136/wordfeud-bot?utm_source=github.com&utm_medium=referral&utm_content=Pricehacker/wordfeud-bot&utm_campaign=Badge_Grade_Settings)
 [![Version](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)](https://img.shields.io/github/v/release/Pricehacker/wordfeud-bot)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Pricehacker/wordfeud-bot)
 [![CodeFactor](https://www.codefactor.io/repository/github/pricehacker/wordfeud-bot/badge)](https://www.codefactor.io/repository/github/pricehacker/wordfeud-bot)
