@@ -89,6 +89,24 @@ Start docker container with your credentials as environment variables:
 docker run -e WORDFEUD_USERNAME={your user ID here} -e WORDFEUD_PASSWORD={your password here} wordfeudbot
 ```
 
+### Python package installer
+
+Download and install the package:
+
+```bash
+# Install the package with pip
+pip install wordfeudbot
+```
+
+Run the script with credentials as arguments:
+
+```bash
+# Remove the curly braces
+wordfeudbot --user_id {your user ID here} --password {your password here}
+```
+
+Note: Credentials are optional if you set environment variables.
+
 ## Compatibility
 
 ### Operating systems (tested)
