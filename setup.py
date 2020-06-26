@@ -21,9 +21,15 @@ setup(
             "wordfeudbot = wordfeudbot.main:main",
         ]
     },
+    install_requires=[            # I get to this in a second
+        'coloredlogs',
+        'emoji',
+        'requests',
+        'urllib3',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-    ]
+    ],
 )
