@@ -8,7 +8,7 @@ import os
 
 setup(
     name='wordfeudbot',
-    version='1.1.0',
+    version='',  # Set new version
     author="Pricehacker",
     author_email="admin@system.gq",
     description="A python script that automates the game of wordfeud",
