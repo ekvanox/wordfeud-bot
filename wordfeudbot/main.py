@@ -449,8 +449,9 @@ class Wordfeud:
         }
 
         response = requests.get(
-            f"https://api.wordfeud.com/wf/user/status/", headers=headers, verify=VERIFY_SSL
-        )
+            f"https://api.wordfeud.com/wf/user/status/",
+            headers=headers,
+            verify=VERIFY_SSL)
 
         parsed = response.json()
 
@@ -546,7 +547,12 @@ class WordfeudGame:
 
         return move_list
 
-    def opponent_optimal_moves(self, return_tile_list=False, num_moves=10, tiles=None, tile_positions=None):
+    def opponent_optimal_moves(
+            self,
+            return_tile_list=False,
+            num_moves=10,
+            tiles=None,
+            tile_positions=None):
         """Returns an ordered list of optimal moves available for the active board
 
         Args:
@@ -579,9 +585,12 @@ class WordfeudGame:
             opponent_possible_tiles_list = list(opponent_possible_tiles)
 
             trimmed_opponent_possible_tiles_list = []
-            for _ in range(len(opponent_possible_tiles_list) if len(opponent_possible_tiles_list) < 7 else 7):
-                trimmed_opponent_possible_tiles_list.append(opponent_possible_tiles_list.pop(random.randint(
-                    0, len(opponent_possible_tiles_list)-1)))
+            for _ in range(len(opponent_possible_tiles_list) if len(
+                    opponent_possible_tiles_list) < 7 else 7):
+                trimmed_opponent_possible_tiles_list.append(
+                    opponent_possible_tiles_list.pop(
+                        random.randint(
+                            0, len(opponent_possible_tiles_list) - 1)))
 
         # create a Board with standard bonus square placement and
         # set the current state of the game (where tiles are placed)
@@ -617,16 +626,17 @@ class WordfeudGame:
         board.set_state(state)
 
         # The tiles we have on hand, '*' is a blank tile
-        letters = "".join(
-            "*" if letter == "" else letter.lower() for letter in trimmed_opponent_possible_tiles_list
-        )
+        letters = "".join("*" if letter == "" else letter.lower()
+                          for letter in trimmed_opponent_possible_tiles_list)
 
         words = board.calc_all_word_scores(letters, WORDLIST, dsso_id)
 
         move_list = heapq.nlargest(
             num_moves, words, lambda wordlist: wordlist[4])
 
-        return (move_list, trimmed_opponent_possible_tiles_list) if return_tile_list else move_list
+        return (
+            move_list,
+            trimmed_opponent_possible_tiles_list) if return_tile_list else move_list
 
 
 def word_to_tile_position(move, tiles):
@@ -699,17 +709,33 @@ def main():
     parser.add_argument('--user_id', type=str,
                         help='Wordfeud user id for login (e.g. "20392863")',
                         default=os.getenv('WORDFEUD_USERNAME', 'undefined'))
-    parser.add_argument('--password', type=str,
-                        help='Wordfeud password for login (e.g. "ea270fcfb2b2076e77a30f933891de7325c48a28")',
-                        default=os.getenv('WORDFEUD_PASSWORD', 'undefined'))
-    parser.add_argument('--active_games_limit', type=int,
-                        help='Amount of games that the program plays concurrently (default: 10)', default=10)
-    parser.add_argument('--high_points_threshold', type=int,
-                        help='Points needed to trigger unique chat message (default: 100)', default=100)
-    parser.add_argument('--playing_speed', type=int,
-                        help='Time in seconds between every check for game updates (default: 3600)', default=3600)
-    parser.add_argument('--verify_ssl', type=bool,
-                        help='Choose if requests should verify encryption (default: True)', default=True)
+    parser.add_argument(
+        '--password',
+        type=str,
+        help='Wordfeud password for login (e.g. "ea270fcfb2b2076e77a30f933891de7325c48a28")',
+        default=os.getenv(
+            'WORDFEUD_PASSWORD',
+            'undefined'))
+    parser.add_argument(
+        '--active_games_limit',
+        type=int,
+        help='Amount of games that the program plays concurrently (default: 10)',
+        default=10)
+    parser.add_argument(
+        '--high_points_threshold',
+        type=int,
+        help='Points needed to trigger unique chat message (default: 100)',
+        default=100)
+    parser.add_argument(
+        '--playing_speed',
+        type=int,
+        help='Time in seconds between every check for game updates (default: 3600)',
+        default=3600)
+    parser.add_argument(
+        '--verify_ssl',
+        type=bool,
+        help='Choose if requests should verify encryption (default: True)',
+        default=True)
     var_dict = vars(parser.parse_args())
 
     # Set global values
@@ -731,7 +757,7 @@ def main():
         script_dir, 'data', 'wordlists', "swedish.txt"))
     logging.info("Wordlist loaded")
 
-    while 1:
+    while True:
         try:
             # Suppres warnings
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -747,12 +773,40 @@ def main():
             last_check_unix_time = 0
             max_outgoing_requests = 3
             vocals = ['E', 'U', 'I', 'O', 'Å', 'A', 'Y', 'Ö', 'Ä']
-            consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
-                          'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Z']
-            game_start_messages = ["I'm back", "I am a friend of Sarah Connor. I was told she was here. Could I see her please?", "Sarah Connor?", "Nice night for a walk.",
-                                   "The future has not been written. There is no fate but what we make for ourselves.", "Come with me if you want to live"]
-            opponent_win_messages = ["I'll be back", "I'm an obsolete design. T-X is faster, more powerful and more intelligent. It's a far more effective killing machine.",
-                                     "I know now why you cry, but it's something I can never do. Goodbye.", "It has to end here", "Judgement Day is inevitable."]
+            consonants = [
+                'B',
+                'C',
+                'D',
+                'F',
+                'G',
+                'H',
+                'J',
+                'K',
+                'L',
+                'M',
+                'N',
+                'P',
+                'Q',
+                'R',
+                'S',
+                'T',
+                'V',
+                'W',
+                'X',
+                'Z']
+            game_start_messages = [
+                "I'm back",
+                "I am a friend of Sarah Connor. I was told she was here. Could I see her please?",
+                "Sarah Connor?",
+                "Nice night for a walk.",
+                "The future has not been written. There is no fate but what we make for ourselves.",
+                "Come with me if you want to live"]
+            opponent_win_messages = [
+                "I'll be back",
+                "I'm an obsolete design. T-X is faster, more powerful and more intelligent. It's a far more effective killing machine.",
+                "I know now why you cry, but it's something I can never do. Goodbye.",
+                "It has to end here",
+                "Judgement Day is inevitable."]
             player_win_messages = ["Hasta la vista, baby",
                                    "You are terminated", "I killed you"]
             player_word_high_points_messages = ["He'll live.", "No problemo"]
@@ -763,7 +817,7 @@ def main():
             question_response_messages = [
                 "I am not authorized to answer your question."]
 
-            while 1:
+            while True:
                 # Update time
                 current_unix_time = time.time() - 1
 
@@ -787,13 +841,16 @@ def main():
                             f'Accepting incoming request from {inviter}')
                         wf.accept_incoming_request(request_id)
 
-                # Start new games if under limit (useful if there are no active games at all)
-                if len(game_status_data["content"]["games"]) < ACTIVE_GAMES_LIMIT:
+                # Start new games if under limit (useful if there are no active
+                # games at all)
+                if len(game_status_data["content"]
+                       ["games"]) < ACTIVE_GAMES_LIMIT:
                     # Calculate the amount of new games available
                     num_new_games = ACTIVE_GAMES_LIMIT - \
                         len(game_status_data["content"]["games"])
 
-                    # As the wordfeud server limits the amount of outgoing game requests
+                    # As the wordfeud server limits the amount of outgoing game
+                    # requests
                     num_new_games = num_new_games if num_new_games < max_outgoing_requests else max_outgoing_requests
                     num_new_games -= outgoing_random_games_requests + incoming_game_requests
 
@@ -846,25 +903,29 @@ def main():
                         wf.send_chat_message(
                             game_id, chat_response_message)
 
-                    # If game is out of time order (this separates active games and completed games)
+                    # If game is out of time order (this separates active games
+                    # and completed games)
                     if games_are_active and last_game_unix_time < current_game_unix_time:
                         # Calculate amount of currently active games
                         active_games = iterated_games - \
                             outgoing_random_games_requests - incoming_game_requests
 
-                        # Prevent error when there are more active games than the limit (causes exception in for loop)
+                        # Prevent error when there are more active games than
+                        # the limit (causes exception in for loop)
                         if (ACTIVE_GAMES_LIMIT - active_games) > 0:
                             # Calculate amount of new games to be started
                             num_new_games = ACTIVE_GAMES_LIMIT - active_games
 
-                            # As the wordfeud server limits the amount of outgoing game requests
+                            # As the wordfeud server limits the amount of
+                            # outgoing game requests
                             num_new_games = num_new_games if num_new_games < max_outgoing_requests else max_outgoing_requests
                             num_new_games -= outgoing_random_games_requests + incoming_game_requests
 
                             logging.info(
                                 f"Starting new game against random opponent x{num_new_games}")
 
-                            # Iterate through all "missing" games and start new ones
+                            # Iterate through all "missing" games and start new
+                            # ones
                             for _ in range(num_new_games):
                                 wf.start_new_game_random(4, "random")
                         games_are_active = False
@@ -873,7 +934,8 @@ def main():
                     last_game_unix_time = current_game_unix_time
 
                     # If opponent hasn't played since script last checked
-                    # Note: last_check_unix_time == 0 during whole first iteration (after startup)
+                    # Note: last_check_unix_time == 0 during whole first
+                    # iteration (after startup)
                     if last_check_unix_time > current_game_unix_time:
                         logging.debug("Closing because of timeout")
                         continue
@@ -881,16 +943,18 @@ def main():
                     # Get more data from server about the given game id
                     full_game_data = wf.board_and_tile_data(game_summary["id"])
 
-                    # Add board layout to local board storage (re-reading the same board twice will just update the record)
+                    # Add board layout to local board storage (re-reading the
+                    # same board twice will just update the record)
                     wf.update_board_quarters(
                         full_game_data["content"]["boards"])
 
-                    # Convert data to WordfeudGame object that automatically parses game info
+                    # Convert data to WordfeudGame object that automatically
+                    # parses game info
                     current_game = WordfeudGame(
-                        full_game_data["content"]["games"][0], wf.board_quarters
-                    )
+                        full_game_data["content"]["games"][0], wf.board_quarters)
 
-                    # If game was recently finished and it isn't the first iteration
+                    # If game was recently finished and it isn't the first
+                    # iteration
                     if not games_are_active:
                         if last_check_unix_time:
                             # Set variable for checking if user won or not
@@ -907,7 +971,9 @@ def main():
                                     current_game.game_id, random.choice(opponent_win_messages))
                         continue
 
-                    # If game isn't playable for some reason (this will probably only happen the first iteration after the script is started)
+                    # If game isn't playable for some reason (this will
+                    # probably only happen the first iteration after the script
+                    # is started)
                     if not current_game.active or not current_game.my_turn:
                         # If opponents turn
                         logging.debug("Skipping as it is not players turn")
@@ -920,20 +986,23 @@ def main():
                     if current_game.last_move_points > HIGH_POINTS_THRESHOLD:
                         # Send response message to user
                         wf.send_chat_message(
-                            current_game.game_id, random.choice(opponent_word_high_points_messages))
+                            current_game.game_id,
+                            random.choice(opponent_word_high_points_messages))
 
                     # Generate list of optimal moves for player in current game
                     player_most_points_moves = current_game.player_optimal_moves(
                         num_moves=10)
 
-                    # If all tile information is available for the program (only happens in end game)
+                    # If all tile information is available for the program
+                    # (only happens in end game)
                     if current_game.tiles_in_bag == 0:
-                        # Generate list of probable optimal moves for opponent in current game
+                        # Generate list of probable optimal moves for opponent
+                        # in current game
                         (opponent_most_points_moves, opponent_tiles) = current_game.opponent_optimal_moves(
                             num_moves=3, return_tile_list=True)
 
-                        opponent_move_points_list = [opponent_move[4]
-                                                     for opponent_move in opponent_most_points_moves]
+                        opponent_move_points_list = [
+                            opponent_move[4] for opponent_move in opponent_most_points_moves]
 
                         if opponent_move_points_list:
                             opponent_average_points = sum(
@@ -943,7 +1012,12 @@ def main():
 
                         # Calculate opponents counter moves (only 1 step ahead)
                         player_optimal_moves = []
-                        for (x, y, horizontal, word, points) in player_most_points_moves:
+                        for (
+                            x,
+                            y,
+                            horizontal,
+                            word,
+                                points) in player_most_points_moves:
 
                             tile_positions = word_to_tile_position(
                                 (x, y, horizontal, word, points), current_game.tiles)
@@ -951,20 +1025,21 @@ def main():
                             opponent_most_points_moves_future = current_game.opponent_optimal_moves(
                                 num_moves=3, tiles=opponent_tiles, tile_positions=tile_positions)
 
-                            opponent_move_points_list_future = [opponent_move_future[4]
-                                                                for opponent_move_future in opponent_most_points_moves_future]
+                            opponent_move_points_list_future = [
+                                opponent_move_future[4] for opponent_move_future in opponent_most_points_moves_future]
                             if opponent_move_points_list_future:
                                 opponent_average_points_future = sum(
                                     opponent_move_points_list_future) / len(opponent_move_points_list_future)
                             else:
                                 opponent_average_points_future = 0
 
-                            # Higher opponent_points_diff means better for opponent
+                            # Higher opponent_points_diff means better for
+                            # opponent
                             opponent_points_diff = opponent_average_points - \
                                 opponent_average_points_future
 
                             # Add multiplier as it is only an estimation
-                            smart_points = points+(opponent_points_diff)
+                            smart_points = points + (opponent_points_diff)
 
                             player_optimal_moves.append(
                                 (x, y, horizontal, word, points, smart_points))
@@ -973,9 +1048,11 @@ def main():
                         player_optimal_moves.sort(
                             reverse=True, key=lambda x: x[5])
                     else:
-                        # Just add points twice to comply with expected format later
-                        player_optimal_moves = [(x, y, horizontal, word, points, points) for (
-                            x, y, horizontal, word, points) in player_most_points_moves]
+                        # Just add points twice to comply with expected format
+                        # later
+                        player_optimal_moves = [
+                            (x, y, horizontal, word, points, points) for (
+                                x, y, horizontal, word, points) in player_most_points_moves]
 
                     if player_optimal_moves == []:
                         # If no moves are found
@@ -995,19 +1072,24 @@ def main():
                         consonants_on_hand = [
                             i for i in current_game.letters if i in consonants]
 
-                        # Go through all possible moves until one is accepted by the server (most generated moves are accepted)
-                        for (x, y, horizontal, word, points, smart_points) in player_optimal_moves:
+                        # Go through all possible moves until one is accepted
+                        # by the server (most generated moves are accepted)
+                        for (x, y, horizontal, word, points,
+                             smart_points) in player_optimal_moves:
 
                             # Check if it is reasonable to swap tiles
-                            if points < 20 and smart_points < 20 and len(vocals_on_hand) < 2 and len(consonants_on_hand) < current_game.tiles_in_bag:
-                                # Swap all consonants in order to get more vocals
+                            if points < 20 and smart_points < 20 and len(vocals_on_hand) < 2 and len(
+                                    consonants_on_hand) < current_game.tiles_in_bag:
+                                # Swap all consonants in order to get more
+                                # vocals
                                 logging.info(
                                     f'Swapping {len(consonants_on_hand)} consonants in hand')
                                 wf.swap_tiles(current_game.game_id,
                                               consonants_on_hand)
                                 break
                             elif points < 20 and smart_points < 20 and len(consonants_on_hand) < 2 and len(vocals_on_hand) < current_game.tiles_in_bag:
-                                # Swap all vocals in order to get more consonants
+                                # Swap all vocals in order to get more
+                                # consonants
                                 logging.info(
                                     f'Swapping {len(vocals_on_hand)} vocals in hand')
                                 wf.swap_tiles(
@@ -1064,7 +1146,7 @@ def main():
 
 def is_emoji(input_string: str):
     for character in input_string:
-        if not character in UNICODE_EMOJI:
+        if character not in UNICODE_EMOJI:
             return False
     return True
 
