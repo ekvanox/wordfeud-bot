@@ -703,7 +703,7 @@ def main():
                         help='Wordfeud password for login (e.g. "ea270fcfb2b2076e77a30f933891de7325c48a28")',
                         default=os.getenv('WORDFEUD_PASSWORD', 'undefined'))
     parser.add_argument('--active_games_limit', type=int,
-                        help='Amount of games that the program plays concurrently (default: 10)', default=10)
+                        help='Amount of games that the program plays concurrently (default: 20)', default=20)
     parser.add_argument('--high_points_threshold', type=int,
                         help='Points needed to trigger unique chat message (default: 100)', default=100)
     parser.add_argument('--playing_speed', type=int,
