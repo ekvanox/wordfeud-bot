@@ -54,9 +54,9 @@ class Board(object):
                        board (good for symetrical layouts)'''
         self.board = self.expand_quarter_board(qboard) if expand else qboard
         N = len(self.board)
-        self.empty_row = ' '*N
-        self.horizontal = [self.empty_row]*N
-        self.vertical = [self.empty_row]*N
+        self.empty_row = ' ' * N
+        self.horizontal = [self.empty_row] * N
+        self.vertical = [self.empty_row] * N
 
     # make hashable
     def __hash__(self):
@@ -65,7 +65,7 @@ class Board(object):
     def __eq__(self, other):
         try:
             return self.horizontal.__eq__(other.horizontal)
-        except:
+        except BaseException:
             return False
 
     @classmethod
@@ -73,9 +73,9 @@ class Board(object):
         '''Takes a quarter board and expands it to a whole board by mirroring it in
         the four possible ways'''
         qbs = [r.split(' ') for r in qb]
-        b = [0] * (len(qbs)*2-1)
+        b = [0] * (len(qbs) * 2 - 1)
         for i, row in enumerate(qbs):
-            b[i] = b[-i-1] = row + row[-2::-1]
+            b[i] = b[-i - 1] = row + row[-2::-1]
         return b
 
     def set_state(self, rows):
@@ -87,7 +87,7 @@ class Board(object):
     def is_occupied(self, x, y):
         try:
             return self.vertical[x][y] != ' '
-        except:
+        except BaseException:
             return False
 
     def play_word(self, word, x, y, horizontal):
@@ -95,9 +95,10 @@ class Board(object):
         :param x The x coordinate that the word starts at
         :param y The y coordinate that the word starts at
         :param horizontal True if the word is horizontal, False if it is vertical'''
-        (dx, dy) = (1,0) if horizontal else (0,1)
+        (dx, dy) = (1, 0) if horizontal else (0, 1)
         for ch in word.lower():
-            self.horizontal[y] = self.horizontal[y][:x] + ch + self.horizontal[y][x+1:]
+            self.horizontal[y] = self.horizontal[y][:x] + \
+                ch + self.horizontal[y][x + 1:]
             x += dx
             y += dy
         self.set_state(self.horizontal)
@@ -107,11 +108,11 @@ class Board(object):
         '''Returns the beginning and end of the word at position i given that a character would be placed in i
         :param row The row as a string with spaces for unfilled positions
         :i The position for which we want to know the surrounding word'''
-        start = row.rfind(' ', 0, i)+1
-        end = row.find(' ', i+1)
+        start = row.rfind(' ', 0, i) + 1
+        end = row.find(' ', i + 1)
         if end == -1:
             end = len(row)
-        assert(start<end)
+        assert(start < end)
         return (start, end)
 
     def surrounding_words(self, horizontal, i):
@@ -122,7 +123,8 @@ class Board(object):
             (start, end) = self.start_end(row, i)
             yield row[start:end].lower()
 
-    def calc_word_points(self, word, x0, y0, horizontal, include_crossing_words=True):
+    def calc_word_points(self, word, x0, y0, horizontal,
+                         include_crossing_words=True):
         '''Calculates the score of a word that has not yet been played to the board
         :param word The word
         :param x0 The x coordinate where the first letter of the word will be played (or already is)
@@ -134,7 +136,7 @@ class Board(object):
         tiles_used = 0
         total_points = 0
         (x, y) = (x0, y0)
-        (dx, dy) = (1,0) if horizontal else (0,1)
+        (dx, dy) = (1, 0) if horizontal else (0, 1)
         for i, ch in enumerate(word):
             letter_points = _letter_points.get(ch, 0)
             if self.horizontal[y][x] == ' ':
@@ -146,12 +148,15 @@ class Board(object):
                     word_multiplicator *= int(square_bonus[0])
 
                 if include_crossing_words:
-                    crow, ci = (self.vertical[x], y) if horizontal else (self.horizontal[y], x)
+                    crow, ci = (
+                        self.vertical[x], y) if horizontal else (
+                        self.horizontal[y], x)
                     s, e = self.start_end(crow, ci)
-                    if e-s > 1:
+                    if e - s > 1:
                         (cx, cy) = (x, s) if horizontal else (s, y)
                         cword = crow[s:e].replace(' ', ch)
-                        total_points += self.calc_word_points(cword, cx, cy, not horizontal, False)
+                        total_points += self.calc_word_points(
+                            cword, cx, cy, not horizontal, False)
 
             word_points += letter_points
             x += dx
@@ -171,7 +176,10 @@ class Board(object):
         :param wordlist The wordlist of legal words as a wordsolver.wordlist.Wordlist object'''
         for (i, row) in enumerate(self.horizontal):
             sw = list(self.surrounding_words(True, i))
-            chars = [wordlist.get_legal_characters(surrounding, variant) for surrounding in sw]
+            chars = [
+                wordlist.get_legal_characters(
+                    surrounding,
+                    variant) for surrounding in sw]
             connected = [surrounding != ' ' for surrounding in sw]
             if i == 7:
                 connected[7] = True
@@ -179,7 +187,10 @@ class Board(object):
                         (x, word) in wordlist.words(row, list(zip(chars, connected)), letters, variant))
         for (i, row) in enumerate(self.vertical):
             sw = list(self.surrounding_words(False, i))
-            chars = [wordlist.get_legal_characters(surrounding, variant) for surrounding in sw]
+            chars = [
+                wordlist.get_legal_characters(
+                    surrounding,
+                    variant) for surrounding in sw]
             connected = [surrounding != ' ' for surrounding in sw]
             if i == 7:
                 connected[7] = True
