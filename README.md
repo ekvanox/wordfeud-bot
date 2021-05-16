@@ -122,4 +122,4 @@ Note: Credentials are optional if you set environment variables.
 
 ## Read more
 
-Documentation from the development process can be found [here](https://heimdal.ml/projects/wordfeud-bot/).
+Documentation from the development process can be found [here](https://heimdal.dev/projects/wordfeud-bot/).
