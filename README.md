@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 Currently, the credentials (user ID & password) are not captured by the wordfeud bot itself, and therefore have to be found prior to using it.
 
-[Here](https://heimdal.ml/projects/wordfeud-bot/) is a guide on how to do so (windows only)
+[Here](https://heimdal.dev/projects/wordfeud-bot/) is a guide on how to do so (windows only)
 
 ## Usage
 
